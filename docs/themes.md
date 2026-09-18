@@ -1,4 +1,4 @@
-# Themes — Koi Pond, VLC and Chrome
+# Themes — Koi Pond, VLC, Files and Chrome
 
 ## Koi Pond (Omarchy theme)
 
@@ -32,6 +32,25 @@ VLC is a Qt5 app, so Omarchy's GTK theming doesn't reach it. The fix:
    `QT_QPA_PLATFORMTHEME=qt5ct` **only for VLC**, so other Qt apps are unchanged.
 
 Needs the `qt5ct` package, which the installer adds.
+
+## Files
+
+![Files with the theme applied](img/files-theme.jpg)
+
+Files (Nautilus) uses libadwaita, and Omarchy only sets it to Adwaita-dark,
+so it doesn't use the theme's colours. The fix:
+
+1. `files/gtk.css.tpl` → `~/.config/omarchy/themed/`. It is rendered to
+   `~/.local/state/omarchy/current/theme/gtk.css` on each theme change, and it
+   sets libadwaita's named colours (window, sidebar, header bar, cards, accent).
+2. `~/.config/gtk-4.0/gtk.css` and `~/.config/gtk-3.0/gtk.css` contain only an
+   `@import` of that file, so other GTK apps get the colours too.
+3. `files/theme-set-nautilus` → `~/.config/omarchy/hooks/theme-set.d/`. GTK
+   reads `gtk.css` only at startup, so the hook quits Nautilus after a theme
+   change. The next time Files opens, it has the new colours.
+
+If you already have your own `gtk.css`, the installer leaves it alone and
+prints a warning. Copy the `@import` line into it yourself.
 
 ## Chrome
 

@@ -1,0 +1,7 @@
+#!/bin/bash
+# GTK only reads gtk.css at startup: restart Nautilus so Files picks up the
+# newly rendered theme colours. Open windows close; the next launch is themed.
+if pgrep -x nautilus >/dev/null; then
+  nautilus -q 2>/dev/null || pkill -x nautilus
+fi
+exit 0

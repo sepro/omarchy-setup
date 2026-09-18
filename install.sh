@@ -6,7 +6,7 @@
 #   ./install.sh theme vlc       install only the named components
 #   ./install.sh --list          list components
 #
-# Components: theme, vlc, chrome, vlc-recent, desktop-stats, plymouth, jellyfin,
+# Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
 #             herdr-scratchpad, surfshark, torrents
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -76,6 +76,22 @@ do_vlc() {
   install_file "$CFG/qt5ct/qt5ct.conf.new" "$CFG/qt5ct/qt5ct.conf"; rm -f "$CFG/qt5ct/qt5ct.conf.new"
   install_file "$REPO/vlc/vlc.desktop" "$HOME/.local/share/applications/vlc.desktop"
   update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+}
+
+do_files() {
+  step "Files theme (GTK colours generated from the Omarchy theme)"
+  install_file "$REPO/files/gtk.css.tpl" "$CFG/omarchy/themed/gtk.css.tpl"
+  sed "s#@HOME@#$HOME#g" "$REPO/files/gtk-import.css" >"$REPO/files/.gtk-import.css.new"
+  for d in gtk-3.0 gtk-4.0; do
+    if [[ -f $CFG/$d/gtk.css ]] && ! grep -q 'omarchy/current/theme/gtk.css' "$CFG/$d/gtk.css"; then
+      warn "$d/gtk.css has your own rules; add the @import from files/gtk-import.css by hand"
+    else
+      install_file "$REPO/files/.gtk-import.css.new" "$CFG/$d/gtk.css"
+    fi
+  done
+  rm -f "$REPO/files/.gtk-import.css.new"
+  omarchy hook install theme-set "$REPO/files/theme-set-nautilus" >/dev/null \
+    || warn "could not install theme-set hook"
 }
 
 do_chrome() {
@@ -250,7 +266,7 @@ command -v omarchy >/dev/null || { echo "This doesn't look like an Omarchy syste
 COMPONENTS=("$@"); (( ${#COMPONENTS[@]} )) || COMPONENTS=("${ALL[@]}")
 for c in "${COMPONENTS[@]}"; do
   case "$c" in
-    theme) do_theme ;; vlc) do_vlc ;; chrome) do_chrome ;;
+    theme) do_theme ;; vlc) do_vlc ;; chrome) do_chrome ;; files) do_files ;;
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;;
@@ -263,7 +279,7 @@ done
 if [[ " ${COMPONENTS[*]} " == *" theme "* ]]; then
   step "Applying theme"
   omarchy theme set koi-pond || warn "run: omarchy theme set koi-pond"
-elif [[ " ${COMPONENTS[*]} " =~ \ (vlc|chrome)\  ]]; then
+elif [[ " ${COMPONENTS[*]} " =~ \ (vlc|chrome|files)\  ]]; then
   step "Re-applying current theme to render the new templates"
   omarchy theme refresh || warn "re-apply your theme to render the templates"
 fi
