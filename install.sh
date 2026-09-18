@@ -252,6 +252,9 @@ do_torrents() {
       || omarchy bar put sepro.torrents --section right \
       || warn "could not add widget; run: omarchy bar put sepro.torrents --section right"
   fi
+  append_once "$CFG/hypr/bindings.lua" "sepro.torrents" \
+'-- Torrents popup: ~/.config/omarchy/plugins/sepro.torrents
+o.bind("SUPER + D", "Torrents", "omarchy-shell sepro.torrents toggle")'
 }
 
 # ── main ──────────────────────────────────────────────────────────────

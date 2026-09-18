@@ -14,7 +14,8 @@ import qs.Ui
 //   middle-click stop everything (or resume if everything is stopped)
 //
 // In the popup: Enter / Space stops or resumes the row, O opens its folder,
-// X removes it (files are kept), S / R stop / resume all, W opens the Web UI.
+// X removes it (files are kept), S / R stop / resume all, W opens the Web UI,
+// C cleans the downloads with Claude, J syncs to Jellyfin. SUPER+D toggles it.
 Panel {
   id: root
   moduleName: "sepro.torrents"
@@ -29,6 +30,14 @@ Panel {
   property var status: ({ running: false, torrents: [] })
   readonly property var torrents: status.torrents || []
   readonly property bool anyRunning: torrents.some(function(t) { return !t.done && t.group !== "stopped" && t.group !== "error" })
+  readonly property var sync: status.sync || null
+  // Clean and sync only make sense once every download has finished, and
+  // never while the other one (or another run of itself) is going.
+  readonly property string jobBlocker: !status.running ? "qBittorrent is not running"
+    : status.unfinished > 0 ? "downloads still running"
+    : status.clean ? "clean downloads is running"
+    : sync ? "sync is running"
+    : ""
   property int cursor: 0
   property bool cursorActive: false
 
@@ -48,6 +57,8 @@ Panel {
   function removeTorrent(t) { if (t) run(["remove", t.hash]) }
   function openFolder(t) { run(["folder", t ? t.hash : ""]); root.close() }
   function openWebUi() { run(["webui"]); root.close() }
+  function cleanDownloads() { if (!jobBlocker) run(["clean"]) }
+  function syncJellyfin() { if (!jobBlocker) run(["sync"]) }
   function stopAll() { run(["stop", "all"]) }
   function startAll() { run(["start", "all"]) }
 
@@ -80,6 +91,8 @@ Panel {
   }
 
   function tooltip() {
+    if (sync) return "Syncing to Jellyfin: " + Math.floor(sync.progress * 100) + "%"
+    if (status.clean) return "Cleaning downloads…"
     if (!status.running) return "qBittorrent is not running"
     if (!status.active) return "Torrents: idle"
     var parts = []
@@ -177,6 +190,8 @@ Panel {
         else if (k === "s") root.stopAll()
         else if (k === "r") root.startAll()
         else if (k === "w") root.openWebUi()
+        else if (k === "c") root.cleanDownloads()
+        else if (k === "j") root.syncJellyfin()
       }
 
       Flickable {
@@ -222,6 +237,24 @@ Panel {
               onClicked: root.openFolder(null)
             }
             PanelActionButton {
+              iconText: "󰃢"
+              tooltipText: root.jobBlocker ? "Clean downloads: unavailable, " + root.jobBlocker
+                : "Clean downloads (C): sort into movies/series with Claude"
+              enabled: !root.jobBlocker
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: root.cleanDownloads()
+            }
+            PanelActionButton {
+              iconText: "󰑓"
+              tooltipText: root.jobBlocker ? "Sync to Jellyfin: unavailable, " + root.jobBlocker
+                : "Sync to Jellyfin (J)"
+              enabled: !root.jobBlocker
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: root.syncJellyfin()
+            }
+            PanelActionButton {
               iconText: "󰖟"
               tooltipText: "Open Web UI (W)"
               foreground: root.foreground
@@ -240,6 +273,55 @@ Panel {
             color: Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
+          }
+
+          Text {
+            visible: root.status.clean === true
+            width: parent.width
+            text: "󰃢  Claude is cleaning downloads…"
+            color: root.accent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          Column {
+            visible: root.sync !== null
+            width: parent.width
+            spacing: Style.space(3)
+
+            Text {
+              width: parent.width
+              textFormat: Text.PlainText
+              text: !root.sync ? ""
+                : root.sync.phase === "scanning" ? "󰑓  Jellyfin sync: checking what's new…"
+                : "󰑓  Jellyfin sync: file " + Math.min(root.sync.files + 1, root.sync.total_files) + " of " + root.sync.total_files
+                  + "  ·  " + Math.floor(root.sync.progress * 100) + "%" + (root.sync.speed ? "  ·  " + root.sync.speed : "")
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+            Rectangle {
+              width: parent.width
+              height: Style.space(4)
+              radius: height / 2
+              color: Qt.darker(root.foreground, 3.5)
+              Rectangle {
+                width: parent.width * (root.sync ? root.sync.progress : 0)
+                height: parent.height
+                radius: parent.radius
+                color: root.accent
+              }
+            }
+            Text {
+              visible: root.sync && root.sync.file !== ""
+              width: parent.width
+              textFormat: Text.PlainText
+              text: root.sync ? root.sync.file : ""
+              color: root.dim
+              elide: Text.ElideMiddle
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
           }
 
           Text {
@@ -281,10 +363,10 @@ Panel {
           }
 
           Text {
-            visible: root.torrents.length > 0
             width: parent.width
             wrapMode: Text.WordWrap
-            text: "Enter stop/resume  ·  O folder  ·  X remove  ·  S/R all  ·  W Web UI"
+            text: (root.torrents.length > 0 ? "Enter stop/resume  ·  O folder  ·  X remove  ·  S/R all  ·  " : "")
+              + "W Web UI  ·  C clean  ·  J sync"
             color: root.dim
             opacity: 0.7
             font.family: root.fontFamily

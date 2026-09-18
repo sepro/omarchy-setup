@@ -23,6 +23,7 @@ This does five things:
 |---|---|
 | Click a magnet link / open a `.torrent` | Starts downloading; a notification shows the name |
 | Left-click the button | Toggle the popup |
+| SUPER + D | Toggle the popup from the keyboard |
 | Right-click the button | Open the Web UI (http://127.0.0.1:8080) in the browser |
 | Middle-click the button | Stop all (or resume all if everything is stopped) |
 | 󰏤 / 󰐊 on a row, Enter | Stop / resume that torrent |
@@ -31,6 +32,10 @@ This does five things:
 | Header 󰏤/󰐊, S / R | Stop / resume all |
 | Header 󰉋 | Open `/data/downloads` |
 | Header 󰖟, W | Open the Web UI |
+| Header 󰃢, C | Clean downloads: runs Claude (Sonnet, medium effort, auto mode) in the background on the rules in `/data/downloads/CLAUDE.md`; the summary arrives as a notification, the full log is in `~/.cache/sepro-torrents/clean.log` |
+| Header 󰑓, J | Sync to Jellyfin: runs `sync-jellyfin.sh` in the background with a progress bar in the popup; log in `~/.cache/sepro-torrents/sync.log` |
+
+Clean and sync are disabled while any torrent is unfinished, and while either of them is already running.
 
 The Web UI is the full qBittorrent interface: priorities, files, trackers, settings.
 
@@ -57,7 +62,7 @@ running as any user on this machine can control qBittorrent.
 | File | Role |
 |---|---|
 | `plugins/sepro.torrents/Panel.qml` | Bar button and popup; polls every 4 s (1.5 s while open) |
-| `plugins/sepro.torrents/qbt.py` | Web API client: `status`, `add`, `stop`, `start`, `remove`, `folder`, `webui`, `setup` |
+| `plugins/sepro.torrents/qbt.py` | Web API client: `status`, `add`, `stop`, `start`, `remove`, `folder`, `webui`, `clean`, `sync`, `setup` |
 | `torrents/qbittorrent-nox.service` | User service (`--confirm-legal-notice`) |
 | `torrents/qBittorrent.conf` | First-run config: Web UI on 127.0.0.1:8080, no localhost login |
 | `torrents/qbt-magnet.desktop` | Magnet / `.torrent` handler → `qbt.py add` |
