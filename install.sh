@@ -6,7 +6,8 @@
 #   ./install.sh theme vlc       install only the named components
 #   ./install.sh --list          list components
 #
-# Components: theme, vlc, chrome, vlc-recent, desktop-stats, plymouth, jellyfin
+# Components: theme, vlc, chrome, vlc-recent, desktop-stats, plymouth, jellyfin,
+#             herdr-scratchpad
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -17,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin)
+ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -156,10 +157,28 @@ do_jellyfin() {
   say "installed to ~/.local/bin; try: sync-jellyfin.sh -n"
 }
 
+do_herdr_scratchpad() {
+  step "herdr + Claude on the scratchpad (SUPER+S)"
+  command -v herdr >/dev/null || warn "herdr not found; install it from https://herdr.dev"
+  command -v claude >/dev/null || warn "claude not found on PATH"
+  need_pkgs jq
+  install_file "$REPO/herdr-scratchpad/herdr-scratchpad.sh" "$CFG/hypr/scripts/herdr-scratchpad.sh"
+  chmod +x "$CFG/hypr/scripts/herdr-scratchpad.sh"
+  append_once "$CFG/hypr/autostart.lua" "herdr-scratchpad" \
+'-- herdr with Claude inside, parked on the scratchpad (SUPER+S shows it)
+o.window("org.omarchy.herdr-scratchpad", { workspace = "special:scratchpad silent" })
+o.exec_on_start(os.getenv("HOME") .. "/.config/hypr/scripts/herdr-scratchpad.sh")'
+  if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    hyprctl reload >/dev/null
+    setsid "$CFG/hypr/scripts/herdr-scratchpad.sh" >/dev/null 2>&1 &
+    say "started; press SUPER+S"
+  fi
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
-  -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+  -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
   --list)    printf '%s\n' "${ALL[@]}"; exit 0 ;;
 esac
 
@@ -171,6 +190,7 @@ for c in "${COMPONENTS[@]}"; do
     theme) do_theme ;; vlc) do_vlc ;; chrome) do_chrome ;;
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
+    herdr-scratchpad) do_herdr_scratchpad ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done
