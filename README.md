@@ -16,6 +16,7 @@ install can be set up with one command.
 | 🌐 | **Chrome theme**: Chrome theme extension generated from the active Omarchy theme | [themes.md](docs/themes.md#chrome) |
 | 🐟 | **Plymouth splash**: Koi Pond boot and disk-unlock screen | [plymouth.md](docs/plymouth.md) |
 | 🤖 | **herdr scratchpad**: herdr runs on the SUPER+S scratchpad from login, with Claude already started inside | [herdr-scratchpad.md](docs/herdr-scratchpad.md) |
+| 🦈 | **Surfshark tweaks**: tray icon always visible, sticky auto-connect toast dismissed at login | [surfshark.md](docs/surfshark.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies and series to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
 
 ## Install
@@ -29,7 +30,7 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`.
+Components: `theme`, `vlc`, `chrome`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't
@@ -76,6 +77,7 @@ vlc/                        qt5ct palette template, qt5ct.conf, vlc.desktop
 chrome/                     Chrome theme manifest template, chrome-flags.conf
 plymouth/                   boot splash theme
 herdr-scratchpad/           login launcher for herdr + Claude on the scratchpad
+surfshark/                  login wrapper that starts Surfshark quietly
 scripts/                    sync-jellyfin.sh
 docs/                       documentation; docs/img has the screenshots
 ```

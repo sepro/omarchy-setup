@@ -7,7 +7,7 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad
+#             herdr-scratchpad, surfshark
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad)
+ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -175,6 +175,31 @@ o.exec_on_start(os.getenv("HOME") .. "/.config/hypr/scripts/herdr-scratchpad.sh"
   fi
 }
 
+do_surfshark() {
+  step "Surfshark: pinned tray icon, no sticky Connected toast at login"
+  install_file "$REPO/surfshark/surfshark-start.sh" "$CFG/hypr/scripts/surfshark-start.sh"
+  chmod +x "$CFG/hypr/scripts/surfshark-start.sh"
+  # Swap a plain launch_on_start("surfshark") for the wrapper.
+  if grep -q 'o.launch_on_start("surfshark")' "$CFG/hypr/autostart.lua" 2>/dev/null; then
+    cp -p "$CFG/hypr/autostart.lua" "$CFG/hypr/autostart.lua.bak-$STAMP"
+    sed -i '/Surfshark VPN (shows up/d; /o.launch_on_start("surfshark")/d' "$CFG/hypr/autostart.lua"
+  fi
+  append_once "$CFG/hypr/autostart.lua" "surfshark-start.sh" \
+'-- Surfshark VPN (tray icon pinned in shell.json); the wrapper dismisses its
+-- never-expiring "Connected" toast after auto-connect
+o.exec_on_start(os.getenv("HOME") .. "/.config/hypr/scripts/surfshark-start.sh")'
+  # Surfshark is Electron, so its tray id is the generic chrome_status_icon_1.
+  local sj="$CFG/omarchy/shell.json" id=chrome_status_icon_1
+  if [[ -f $sj ]] && ! jq -e --arg id "$id" '.. | objects | select(.id == "omarchy.tray") | .pinned // [] | index($id)' "$sj" >/dev/null; then
+    cp -p "$sj" "$sj.bak-$STAMP"
+    jq --arg id "$id" '(.bar.layout[][] | select(.id == "omarchy.tray")) |= (.pinned = ((.pinned // []) + [$id]) | .hidden = ((.hidden // []) - [$id]))' \
+      "$sj.bak-$STAMP" >"$sj"
+    say "shell.json: pinned $id in the tray"
+  else
+    say "shell.json: tray icon already pinned"
+  fi
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
@@ -190,7 +215,7 @@ for c in "${COMPONENTS[@]}"; do
     theme) do_theme ;; vlc) do_vlc ;; chrome) do_chrome ;;
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
-    herdr-scratchpad) do_herdr_scratchpad ;;
+    herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done
