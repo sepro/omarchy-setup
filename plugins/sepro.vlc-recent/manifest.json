@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "sepro.vlc-recent",
+  "name": "Recently watched",
+  "version": "1.0.0",
+  "author": "sepro",
+  "license": "MIT",
+  "description": "Recently watched VLC videos and the predicted next episode, in the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Recently watched",
+    "description": "Pick up where VLC left off: recent videos, resume positions and the next episode.",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

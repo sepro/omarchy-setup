@@ -1,0 +1,11 @@
+[Plymouth Theme]
+Name=Koi Pond
+Description=Omarchy splash on the Koi Pond wallpaper.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/koi-pond
+ScriptFile=/usr/share/plymouth/themes/koi-pond/koi-pond.script
+ConsoleLogBackgroundColor=0x121212
+MonospaceFont=Cantarell 11
+Font=Cantarell 11
