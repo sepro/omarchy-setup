@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "sepro.torrents",
+  "name": "Torrents",
+  "version": "1.0.0",
+  "author": "sepro",
+  "license": "MIT",
+  "description": "qbittorrent-nox downloads in the Omarchy bar: progress, stop/resume, remove.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Torrents",
+    "description": "Shows while torrents are active: progress, stop/resume, remove, open the Web UI.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

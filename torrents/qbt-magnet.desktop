@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=qBittorrent (add torrent)
+Comment=Send magnet links and .torrent files to qbittorrent-nox
+Icon=folder-download
+Exec=python3 @HOME@/.config/omarchy/plugins/sepro.torrents/qbt.py add %U
+MimeType=x-scheme-handler/magnet;application/x-bittorrent;
+NoDisplay=true
+Terminal=false

@@ -1,0 +1,11 @@
+[Unit]
+Description=qBittorrent (headless, Web UI on 127.0.0.1:8080)
+Documentation=man:qbittorrent-nox(1)
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/qbittorrent-nox --confirm-legal-notice
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

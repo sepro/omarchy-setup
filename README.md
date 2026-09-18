@@ -17,6 +17,7 @@ install can be set up with one command.
 | 🐟 | **Plymouth splash**: Koi Pond boot and disk-unlock screen | [plymouth.md](docs/plymouth.md) |
 | 🤖 | **herdr scratchpad**: herdr runs on the SUPER+S scratchpad from login, with Claude already started inside | [herdr-scratchpad.md](docs/herdr-scratchpad.md) |
 | 🦈 | **Surfshark tweaks**: tray icon always visible, sticky auto-connect toast dismissed at login | [surfshark.md](docs/surfshark.md) |
+| 🧲 | **Torrents**: headless qBittorrent; magnet links download to /data/downloads over the VPN; bar widget shows progress with stop/resume/remove | [torrents.md](docs/torrents.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies and series to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
 
 ## Install
@@ -30,7 +31,7 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`.
+Components: `theme`, `vlc`, `chrome`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't

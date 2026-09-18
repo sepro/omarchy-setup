@@ -7,7 +7,7 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad, surfshark
+#             herdr-scratchpad, surfshark, torrents
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark)
+ALL=(theme vlc chrome vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -200,6 +200,44 @@ o.exec_on_start(os.getenv("HOME") .. "/.config/hypr/scripts/surfshark-start.sh")
   fi
 }
 
+do_torrents() {
+  step "Torrents: qbittorrent-nox, magnet handler, bar widget"
+  need_pkgs qbittorrent-nox libnotify
+  mkdir -p /data/downloads 2>/dev/null || warn "create /data/downloads (writable by $USER)"
+  # Plugin (widget + qbt.py helper)
+  local dest="$CFG/omarchy/plugins/sepro.torrents"
+  mkdir -p "$dest"
+  for f in "$REPO"/plugins/sepro.torrents/*; do install_file "$f" "$dest/$(basename "$f")"; done
+  chmod +x "$dest/qbt.py"
+  # Daemon as a user service. Seed the config only on first install: the
+  # daemon rewrites it on exit, and later settings go through `qbt.py setup`.
+  local conf="$CFG/qBittorrent/qBittorrent.conf"
+  if [[ -f $conf ]]; then
+    grep -q 'LocalHostAuth=false' "$conf" \
+      || warn "$conf exists without WebUI\\LocalHostAuth=false; the widget needs it (stop the daemon, add it under [Preferences])"
+  else
+    install_file "$REPO/torrents/qBittorrent.conf" "$conf"
+  fi
+  install_file "$REPO/torrents/qbittorrent-nox.service" "$CFG/systemd/user/qbittorrent-nox.service"
+  systemctl --user daemon-reload
+  systemctl --user enable --now qbittorrent-nox.service
+  python3 "$dest/qbt.py" setup || warn "could not apply preferences; rerun: python3 $dest/qbt.py setup"
+  # Magnet links and .torrent files
+  sed "s#@HOME@#$HOME#g" "$REPO/torrents/qbt-magnet.desktop" >"$REPO/torrents/.qbt-magnet.desktop.new"
+  install_file "$REPO/torrents/.qbt-magnet.desktop.new" "$HOME/.local/share/applications/qbt-magnet.desktop"
+  rm -f "$REPO/torrents/.qbt-magnet.desktop.new"
+  update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+  xdg-mime default qbt-magnet.desktop x-scheme-handler/magnet application/x-bittorrent
+  say "magnet links -> qbt-magnet.desktop"
+  if grep -q '"sepro.torrents"' "$CFG/omarchy/shell.json" 2>/dev/null; then
+    say "shell.json: widget already in the bar"
+  else
+    omarchy bar put sepro.torrents --after omarchy.tray \
+      || omarchy bar put sepro.torrents --section right \
+      || warn "could not add widget; run: omarchy bar put sepro.torrents --section right"
+  fi
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
@@ -216,6 +254,7 @@ for c in "${COMPONENTS[@]}"; do
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;;
+    torrents) do_torrents ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done
