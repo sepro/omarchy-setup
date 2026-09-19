@@ -7,7 +7,7 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad, surfshark, torrents
+#             herdr-scratchpad, surfshark, torrents, radar
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -257,6 +257,23 @@ do_torrents() {
 o.bind("SUPER + D", "Torrents", "omarchy-shell sepro.torrents toggle")'
 }
 
+do_radar() {
+  step "Rain radar: bar widget next to the weather"
+  local dest="$CFG/omarchy/plugins/sepro.radar"
+  mkdir -p "$dest"
+  for f in "$REPO"/plugins/sepro.radar/*; do install_file "$f" "$dest/$(basename "$f")"; done
+  if grep -q '"sepro.radar"' "$CFG/omarchy/shell.json" 2>/dev/null; then
+    say "shell.json: widget already in the bar"
+  else
+    omarchy bar put sepro.radar --after omarchy.weather \
+      || omarchy bar put sepro.radar --section center \
+      || warn "could not add widget; run: omarchy bar put sepro.radar --after omarchy.weather"
+  fi
+  append_once "$CFG/hypr/bindings.lua" "sepro.radar" \
+'-- Rain radar popup: ~/.config/omarchy/plugins/sepro.radar
+o.bind("SUPER + SHIFT + R", "Rain radar", "omarchy-shell sepro.radar toggle")'
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
@@ -272,7 +289,7 @@ for c in "${COMPONENTS[@]}"; do
     theme) do_theme ;; vlc) do_vlc ;; chrome) do_chrome ;; files) do_files ;;
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
-    herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;;
+    herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     torrents) do_torrents ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac

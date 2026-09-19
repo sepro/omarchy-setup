@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "sepro.radar",
+  "name": "Rain radar",
+  "version": "1.0.0",
+  "author": "sepro",
+  "license": "MIT",
+  "description": "Live rain radar loop around home (RainViewer), in the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Rain radar",
+    "description": "The last two hours of rain radar around home, looped.",
+    "category": "Weather",
+    "allowMultiple": false,
+    "defaultSection": "center"
+  }
+}

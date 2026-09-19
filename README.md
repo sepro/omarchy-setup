@@ -19,6 +19,7 @@ install can be set up with one command.
 | 🤖 | **herdr scratchpad**: herdr runs on the SUPER+S scratchpad from login, with Claude already started inside | [herdr-scratchpad.md](docs/herdr-scratchpad.md) |
 | 🦈 | **Surfshark tweaks**: tray icon always visible, sticky auto-connect toast dismissed at login | [surfshark.md](docs/surfshark.md) |
 | 🧲 | **Torrents**: headless qBittorrent; magnet links download to /data/downloads over the VPN; bar widget shows progress with stop/resume/remove | [torrents.md](docs/torrents.md) |
+| 🌧️ | **Rain radar**: bar widget next to the weather with a looping rain radar map around Herent (RainViewer) and a two-hour rain forecast (Buienradar) | [radar.md](docs/radar.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies and series to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
 
 ## Install
@@ -32,7 +33,7 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`.
+Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't
@@ -63,6 +64,11 @@ Both are a single A4-landscape page.
 
 ### Desktop stats panel
 <img src="docs/img/desktop-stats.jpg" width="300">
+
+### Rain radar widget
+Bar button (radar icon, right of the weather):
+
+![Rain radar popup](docs/img/radar.jpg)
 
 ### Recently watched (VLC) widget
 Bar button (film icon, left of the agents icon):
