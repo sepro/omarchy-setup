@@ -7,7 +7,7 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad, surfshark, torrents, radar
+#             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -274,6 +274,27 @@ do_radar() {
 o.bind("SUPER + SHIFT + R", "Rain radar", "omarchy-shell sepro.radar toggle")'
 }
 
+do_shortcuts() {
+  step "Shortcuts: tmux, herdr and password manager"
+  # Omarchy only binds these while its preinstalled apps are kept; removing them
+  # (~/.local/state/omarchy/preinstalls-removed) drops the bindings, so re-add them.
+  need_pkgs tmux herdr keepassxc
+  append_once "$CFG/hypr/bindings.lua" "sepro.shortcuts" \
+'-- sepro.shortcuts: re-added because removing the preinstalls drops them
+o.bind("SUPER + ALT + RETURN", "Tmux", { omarchy = "terminal-tmux" })
+o.bind("SUPER + CTRL + RETURN", "Herdr", { omarchy = "terminal-herdr" })
+o.bind("SUPER + SHIFT + SLASH", "Passwords", o.launch_sole("org.keepassxc.KeePassXC", "keepassxc"))'
+}
+
+do_herdr() {
+  step "herdr: default keybindings with Ctrl+Space as prefix"
+  # Omarchy's herdr config remaps the keys to mimic tmux; this one keeps herdr's
+  # defaults so the cheat sheets and SUPER+CTRL+K match.
+  command -v herdr >/dev/null || warn "herdr not found; install it from https://herdr.dev"
+  install_file "$REPO/herdr/config.toml" "$CFG/herdr/config.toml"
+  herdr server reload-config >/dev/null 2>&1 || true
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
@@ -290,6 +311,7 @@ for c in "${COMPONENTS[@]}"; do
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
+    shortcuts) do_shortcuts ;; herdr) do_herdr ;;
     torrents) do_torrents ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
