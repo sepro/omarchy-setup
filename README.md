@@ -47,6 +47,18 @@ There are two manual steps:
 - **Desktop stats:** check the `DISKS` list at the top of
   `~/.config/hypr/scripts/desktop-stats.py` matches your mounts.
 
+## Cheat sheets
+
+Printable keyboard cheat sheets for Omarchy and herdr, in the Koi Pond colours.
+Both are a single A4-landscape page.
+
+- [Essentials](cheat_sheets/omarchy-herdr-cheatsheet-v2.pdf) - the bindings you
+  reach for daily, plus the custom `Super + M` / `Super + D` panels from this repo.
+- [Expanded](cheat_sheets/omarchy-herdr-cheatsheet-expanded.pdf) - the same sheet
+  with the fuller set of Omarchy and herdr bindings.
+
+![Cheat sheet](docs/img/cheatsheet.png)
+
 ## Screenshots
 
 ### Desktop stats panel
@@ -73,6 +85,7 @@ Bar button (film icon, left of the agents icon):
 ```
 install.sh                  one-shot deployer
 themes/koi-pond/            Omarchy theme (colors.toml + wallpaper)
+cheat_sheets/               printable keyboard cheat sheets (PDF)
 desktop-stats/              wallpaper stats panel (GTK4 layer-shell)
 plugins/sepro.vlc-recent/   Omarchy shell bar widget
 vlc/                        qt5ct palette template, qt5ct.conf, vlc.desktop
