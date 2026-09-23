@@ -1,0 +1,3 @@
+# Python bytecode from the plugin scripts
+__pycache__/
+*.py[cod]
