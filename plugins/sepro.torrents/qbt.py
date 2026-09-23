@@ -40,6 +40,7 @@ SYNC_STATE = os.path.join(CACHE, "sync.json")
 SYNC_SCRIPT = os.path.expanduser("~/.local/bin/sync-jellyfin.sh")
 MOVIES = "/data/movies"
 SERIES = "/data/series"
+MUSIC = "/data/music"
 
 # The rules live in /data/downloads/CLAUDE.md, which Claude loads from its
 # working directory. Nobody is around to answer, so the two points where those
@@ -364,6 +365,8 @@ def _sync_line(base, line):
         return MOVIES, None
     if line.startswith("-- ") and " / Season " in line:
         return os.path.join(SERIES, line[3:].rsplit(" / Season ", 1)[0]), None
+    if line.startswith("== Music:"):
+        return MUSIC, None
     if base and line and not line.endswith("/"):
         path = os.path.join(base, line)
         if os.path.isfile(path):

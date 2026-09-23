@@ -1,11 +1,12 @@
 # sync-jellyfin.sh
 
-Copies new movies and series from local storage to a Jellyfin library share. It
-reorganises TV episodes into the per-season folders Jellyfin expects.
+Copies new movies, series and music from local storage to a Jellyfin library
+share. It reorganises TV episodes into the per-season folders Jellyfin expects.
 
 ```
 /data/movies/<Movie (Year)>/...          ->  /mnt/jellyfin/Movies/<Movie (Year)>/...
 /data/series/<Show>/<Show>.S01E02.mkv    ->  /mnt/jellyfin/TV/<Show>/Season 01/<Show>.S01E02.mkv
+/data/music/<Artist>/<Album (Year)>/...  ->  /mnt/jellyfin/Music/<Artist>/<Album (Year)>/...
 ```
 
 The source is only read, never changed. Files that already exist on the share are skipped.
@@ -33,7 +34,8 @@ These environment variables override the default paths:
 |---|---|
 | `SRC_MOVIES` | `/data/movies` |
 | `SRC_SERIES` | `/data/series` |
-| `DST_ROOT` | `/mnt/jellyfin` (must contain `Movies/` and `TV/`) |
+| `SRC_MUSIC` | `/data/music` (skipped if absent) |
+| `DST_ROOT` | `/mnt/jellyfin` (must contain `Movies/` and `TV/`; `Music/` is created) |
 | `LOCKFILE` | `/tmp/sync-jellyfin.lock` |
 
 The script doesn't mount the share. Set that up yourself (for example CIFS via

@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 #
-# sync-jellyfin.sh -- copy new movies and series from /data to the Jellyfin share.
+# sync-jellyfin.sh -- copy new movies, series and music from /data to the Jellyfin share.
 #
 #   /data/movies/<Movie (Year)>/...          ->  /mnt/jellyfin/Movies/<Movie (Year)>/...
 #   /data/series/<Show>/<Show>.S01E02.mkv    ->  /mnt/jellyfin/TV/<Show>/Season 01/<Show>.S01E02.mkv
+#   /data/music/<Artist>/<Album (Year)>/...  ->  /mnt/jellyfin/Music/<Artist>/<Album (Year)>/...
 #
 # Series are stored flat in /data but Jellyfin prefers per-season folders, so the
 # season directory is created on the destination side. /data is never modified.
 #
-# Only movies and series are synced; downloads/ and games/ are ignored.
+# Only movies, series and music are synced; downloads/ and games/ are ignored.
 #
 # Usage: sync-jellyfin.sh [-n] [-v] [-q]
 #   -n  dry run, show what would be copied without writing anything
@@ -19,9 +20,11 @@ set -euo pipefail
 
 SRC_MOVIES=${SRC_MOVIES:-/data/movies}
 SRC_SERIES=${SRC_SERIES:-/data/series}
+SRC_MUSIC=${SRC_MUSIC:-/data/music}
 DST_ROOT=${DST_ROOT:-/mnt/jellyfin}
 DST_MOVIES="$DST_ROOT/Movies"
 DST_TV="$DST_ROOT/TV"
+DST_MUSIC="$DST_ROOT/Music"
 LOCKFILE=${LOCKFILE:-/tmp/sync-jellyfin.lock}
 
 DRY_RUN=0
@@ -53,6 +56,20 @@ flock -n 9 || die "another sync is already running (lock: $LOCKFILE)"
 mountpoint -q "$DST_ROOT" || ls "$DST_ROOT" >/dev/null 2>&1 || true
 [ -d "$DST_MOVIES" ] || die "missing destination $DST_MOVIES (is the share mounted?)"
 [ -d "$DST_TV" ]     || die "missing destination $DST_TV (is the share mounted?)"
+
+# Movies/ and TV/ being present means the share really is mounted, so creating
+# Music/ here cannot accidentally write into an empty autofs mountpoint.
+SYNC_MUSIC=1
+if [ ! -d "$SRC_MUSIC" ]; then
+    SYNC_MUSIC=0
+elif [ ! -d "$DST_MUSIC" ]; then
+    if [ "$DRY_RUN" = 1 ]; then
+        log "would create destination $DST_MUSIC"
+    elif ! mkdir -p "$DST_MUSIC"; then
+        warn "cannot create $DST_MUSIC, skipping music"
+        SYNC_MUSIC=0
+    fi
+fi
 
 # CIFS cannot store unix ownership or permissions, so don't try to sync them --
 # rsync would report a failure on every single file. Timestamps on SMB have a
@@ -136,6 +153,22 @@ for show_dir in "$SRC_SERIES"/*/; do
     done
     unset season_files
 done
+
+# ----------------------------------------------------------------- music ----
+# Music has no season-style reshuffling: the Artist/Album (Year)/ layout beets
+# writes under /data/music is already what Jellyfin expects, so one rsync does it.
+if [ "$SYNC_MUSIC" = 1 ]; then
+    log
+    log "== Music: $SRC_MUSIC -> $DST_MUSIC"
+    if rsync "${RSYNC_OPTS[@]}" "$SRC_MUSIC/" "$DST_MUSIC/"; then
+        copied=$((copied + 1))
+    else
+        warn "music sync reported errors (exit $?)"
+    fi
+else
+    log
+    log "== Music: skipped (no $SRC_MUSIC)"
+fi
 
 log
 log "== Done. $copied transfer group(s) processed, $skipped file(s) skipped."
