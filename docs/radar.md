@@ -40,7 +40,9 @@ widget after `omarchy.weather` in the bar, and binds SUPER + SHIFT + R.
 | W | Open the KMI radar page |
 
 The newest frame is held a little longer before the loop restarts, and its
-time is shown in the accent colour.
+time is shown in the accent colour. The age label to the right of the timeline
+("1 h 7 min ago") has a fixed width, so the timeline doesn't change size as the
+label changes.
 
 ## Notes
 

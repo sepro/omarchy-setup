@@ -422,11 +422,22 @@ Panel {
             }
           }
 
+          // Fixed width (the widest label it can show), so the timeline
+          // doesn't resize every frame as the text changes.
           Text {
             text: root.frames.length ? root.age(root.frames[root.frame].time) : "loading…"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
+            horizontalAlignment: Text.AlignRight
+            Layout.preferredWidth: ageMetrics.advanceWidth
+
+            TextMetrics {
+              id: ageMetrics
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+              text: "0 h 00 min ago"
+            }
           }
         }
 
