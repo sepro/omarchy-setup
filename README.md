@@ -21,6 +21,7 @@ install can be set up with one command.
 | 🧲 | **Torrents**: headless qBittorrent; magnet links download to /data/downloads over the VPN; bar widget shows progress with stop/resume/remove | [torrents.md](docs/torrents.md) |
 | 🌧️ | **Rain radar**: bar widget next to the weather with a looping rain radar map around Herent (RainViewer) and a two-hour rain forecast (Buienradar) | [radar.md](docs/radar.md) |
 | 🎵 | **Audio visualizer**: cava spectrum as white square blocks with peak lines on the left of the wallpaper, only while music plays | [visualizer.md](docs/visualizer.md) |
+| 💧 | **Pond screensaver**: the wallpaper as a pond with a slow swell and a drop of water every ~10 s, instead of the text screensaver (idle and SUPER+ESC) | [screensaver.md](docs/screensaver.md) |
 | ⌨️ | **Shortcuts**: SUPER+CTRL+Return herdr, SUPER+ALT+Return tmux, SUPER+SHIFT+/ KeePassXC, SUPER+SHIFT+ALT+Return private browser, restored after removing the preinstalls | [shortcuts.md](docs/shortcuts.md) |
 | 🐑 | **herdr keys**: herdr's default keybindings with Ctrl+Space as the prefix, instead of Omarchy's tmux-style remap, so the cheat sheets match | [herdr.md](docs/herdr.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies, series and music to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
@@ -37,7 +38,7 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`.
+Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`, `screensaver`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't

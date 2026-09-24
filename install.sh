@@ -8,7 +8,7 @@
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
 #             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills,
-#             visualizer
+#             visualizer, screensaver
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -19,7 +19,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -292,6 +292,45 @@ do_visualizer() {
   fi
 }
 
+do_screensaver() {
+  step "Pond screensaver: the wallpaper with water ripples replaces the text screensaver"
+  need_pkgs mpv
+  local f
+  for f in ripples.glsl input.conf pond.lua; do
+    install_file "$REPO/screensaver/$f" "$CFG/pond-screensaver/$f"
+  done
+  install_file "$REPO/screensaver/pond-screensaver" "$HOME/.local/bin/pond-screensaver"
+  chmod +x "$HOME/.local/bin/pond-screensaver"
+
+  # SUPER+ESC -> Screensaver: reuse the menu id to swap its action. Inserted
+  # right after the opening brace; the menu parser drops the trailing comma.
+  # The override replaces the whole entry, so it repeats Omarchy's icon and label.
+  local menu="$CFG/omarchy/extensions/omarchy-menu.jsonc"
+  local entry='"system.screensaver": {"icon":"󱄄","label":"Screensaver","action":"pond-screensaver force"},'
+  mkdir -p "$(dirname "$menu")"
+  [[ -s $menu ]] || printf '{\n}\n' > "$menu"
+  if grep -qF "  $entry" "$menu"; then
+    say "menu: Screensaver entry already overridden"
+  else
+    cp -p "$menu" "$menu.bak-$STAMP"
+    if grep -q "sepro.screensaver" "$menu"; then
+      # Older version of this entry: replace the line.
+      ENTRY="$entry" perl -i -pe 's/^\s*"system\.screensaver":.*$/  $ENV{ENTRY}/' "$menu"
+    else
+      ENTRY="$entry" perl -i -pe 'if (!$done && /^\{/) { $_ .= "  \/\/ sepro.screensaver: SUPER+ESC -> Screensaver starts the pond screensaver\n  $ENV{ENTRY}\n"; $done = 1 }' "$menu"
+    fi
+    say "menu: Screensaver entry now starts pond-screensaver"
+  fi
+
+  # Idle: Omarchy's idle service runs `bash -lc "... omarchy-launch-screensaver"`
+  # with a hard-coded name, and /usr/share/omarchy/bin comes first on PATH, so a
+  # same-named script in ~/.local/bin can't shadow it. A shell function can:
+  # login shells read ~/.bash_profile, and functions win over PATH lookups.
+  append_once "$HOME/.bash_profile" "sepro.screensaver" '
+# sepro.screensaver: the idle screensaver is the pond one (~/.local/bin/pond-screensaver)
+omarchy-launch-screensaver() { pond-screensaver "$@"; }'
+}
+
 do_shortcuts() {
   step "Shortcuts: tmux, herdr, password manager and private browser"
   # Omarchy only binds these while its preinstalled apps are kept; removing them
@@ -353,7 +392,7 @@ for c in "${COMPONENTS[@]}"; do
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
-    torrents) do_torrents ;; visualizer) do_visualizer ;;
+    torrents) do_torrents ;; visualizer) do_visualizer ;; screensaver) do_screensaver ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done

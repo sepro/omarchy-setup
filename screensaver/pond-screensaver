@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# Pond screensaver: the current wallpaper as a pond, with a slow swell and a
+# drop of water now and then (mpv + ripples.glsl). Stands in for
+# omarchy-launch-screensaver and follows its rules: one per monitor, window class
+# org.omarchy.screensaver (so Omarchy's idle service tracks it), and the Omarchy
+# Screensaver toggle is honoured unless called with "force".
+
+DROP_INTERVAL=10   # average seconds between drops (0 = none)
+SWELL=1            # strength of the slow wave over the whole picture (0 = still)
+FPS=30             # 30 is smooth enough for water and half the power of 60
+
+DIR="$HOME/.config/pond-screensaver"
+CLASS=org.omarchy.screensaver
+
+pgrep -f "[o]rg.omarchy.screensaver" >/dev/null && exit 0
+
+if omarchy-toggle-enabled screensaver-off && [[ ${1:-} != "force" ]]; then
+  exit 1
+fi
+
+bg=$(readlink -f "$HOME/.local/state/omarchy/current/background")
+if [[ ! -f $bg ]] || ! command -v mpv >/dev/null; then
+  # No wallpaper or no mpv: fall back to Omarchy's text screensaver.
+  exec /usr/bin/omarchy-launch-screensaver "$@"
+fi
+
+focus_monitor() {
+  hyprctl dispatch "hl.dsp.focus({ monitor = \"$1\" })" >/dev/null 2>&1 || hyprctl dispatch focusmonitor "$1" >/dev/null
+}
+
+focused=$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')
+n=0
+
+for m in $(hyprctl monitors -j | jq -r '.[].name'); do
+  # New windows open on the focused monitor, so focus each one in turn.
+  focus_monitor "$m"
+  n=$((n + 1))
+  setsid -f mpv --no-config --really-quiet --no-terminal \
+    --wayland-app-id="$CLASS" --title="Screensaver" --fs \
+    --no-audio --no-osc --osd-level=0 --cursor-autohide=always \
+    --stop-screensaver=no --hwdec=no \
+    --no-input-default-bindings --input-conf="$DIR/input.conf" --script="$DIR/pond.lua" \
+    --container-fps-override="$FPS" \
+    --glsl-shaders="$DIR/ripples.glsl" \
+    --glsl-shader-opts="fps=$FPS,drop_interval=$DROP_INTERVAL,swell=$SWELL" \
+    "av://lavfi:movie=$bg,loop=loop=-1:size=1:start=0,setpts=N/$FPS/TB" >/dev/null 2>&1
+  # Wait for this monitor's window before focusing the next one.
+  for _ in {1..50}; do
+    hyprctl clients -j | jq -e --arg c "$CLASS" --argjson n "$n" \
+      '[.[] | select(.class == $c)] | length >= $n' >/dev/null && break
+    sleep 0.1
+  done
+done
+
+focus_monitor "$focused"
