@@ -275,7 +275,7 @@ o.bind("SUPER + SHIFT + R", "Rain radar", "omarchy-shell sepro.radar toggle")'
 }
 
 do_shortcuts() {
-  step "Shortcuts: tmux, herdr and password manager"
+  step "Shortcuts: tmux, herdr, password manager and private browser"
   # Omarchy only binds these while its preinstalled apps are kept; removing them
   # (~/.local/state/omarchy/preinstalls-removed) drops the bindings, so re-add them.
   need_pkgs tmux herdr keepassxc
@@ -284,6 +284,9 @@ do_shortcuts() {
 o.bind("SUPER + ALT + RETURN", "Tmux", { omarchy = "terminal-tmux" })
 o.bind("SUPER + CTRL + RETURN", "Herdr", { omarchy = "terminal-herdr" })
 o.bind("SUPER + SHIFT + SLASH", "Passwords", o.launch_sole("org.keepassxc.KeePassXC", "keepassxc"))'
+  append_once "$CFG/hypr/bindings.lua" "sepro.browser-private" \
+'-- sepro.browser-private: private window next to SUPER + SHIFT + RETURN (browser)
+o.bind("SUPER + SHIFT + ALT + RETURN", "Browser (private)", { omarchy = "browser --private" })'
 }
 
 do_herdr() {
