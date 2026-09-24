@@ -7,7 +7,7 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr
+#             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -295,6 +295,26 @@ do_herdr() {
   herdr server reload-config >/dev/null 2>&1 || true
 }
 
+do_claude_skills() {
+  step "Claude Code skills (symlinked into ~/.claude/skills)"
+  # Symlinked rather than copied, so skill edits land in the repo directly.
+  local dest="$HOME/.claude/skills" src name
+  mkdir -p "$dest"
+  for src in "$REPO"/claude/skills/*/; do
+    src=${src%/}; name=$(basename "$src")
+    if [[ -L $dest/$name && $(readlink "$dest/$name") == "$src" ]]; then
+      say "$name: already linked"
+      continue
+    fi
+    if [[ -e $dest/$name || -L $dest/$name ]]; then
+      mv "$dest/$name" "$dest/$name.bak-$STAMP"
+      say "backed up $name -> $name.bak-$STAMP"
+    fi
+    ln -s "$src" "$dest/$name"
+    say "$name: linked"
+  done
+}
+
 # ── main ──────────────────────────────────────────────────────────────
 
 case "${1:-}" in
@@ -311,7 +331,7 @@ for c in "${COMPONENTS[@]}"; do
     vlc-recent) do_vlc_recent ;; desktop-stats) do_desktop_stats ;;
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
-    shortcuts) do_shortcuts ;; herdr) do_herdr ;;
+    shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
     torrents) do_torrents ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
