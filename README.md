@@ -20,6 +20,7 @@ install can be set up with one command.
 | 🦈 | **Surfshark tweaks**: tray icon always visible, sticky auto-connect toast dismissed at login | [surfshark.md](docs/surfshark.md) |
 | 🧲 | **Torrents**: headless qBittorrent; magnet links download to /data/downloads over the VPN; bar widget shows progress with stop/resume/remove | [torrents.md](docs/torrents.md) |
 | 🌧️ | **Rain radar**: bar widget next to the weather with a looping rain radar map around Herent (RainViewer) and a two-hour rain forecast (Buienradar) | [radar.md](docs/radar.md) |
+| 🎵 | **Audio visualizer**: cava spectrum as white square blocks with peak lines on the left of the wallpaper, only while music plays | [visualizer.md](docs/visualizer.md) |
 | ⌨️ | **Shortcuts**: SUPER+CTRL+Return herdr, SUPER+ALT+Return tmux, SUPER+SHIFT+/ KeePassXC, SUPER+SHIFT+ALT+Return private browser, restored after removing the preinstalls | [shortcuts.md](docs/shortcuts.md) |
 | 🐑 | **herdr keys**: herdr's default keybindings with Ctrl+Space as the prefix, instead of Omarchy's tmux-style remap, so the cheat sheets match | [herdr.md](docs/herdr.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies, series and music to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
@@ -36,12 +37,12 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`.
+Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't
 touch `/usr/share/omarchy`, so `omarchy update` keeps your changes. Only
-`plymouth` needs sudo.
+`plymouth` and the package installs (e.g. `cava` for `visualizer`) need sudo.
 
 There are two manual steps:
 - **Chrome:** load `~/.local/state/omarchy/current/theme` as an unpacked extension
@@ -95,6 +96,9 @@ Both are a single A4-landscape page.
 ### Desktop stats panel
 <img src="docs/img/desktop-stats.jpg" width="300">
 
+### Audio visualizer
+<img src="docs/img/visualizer.jpg" width="600">
+
 ### Rain radar widget
 Bar button (radar icon, right of the weather):
 
@@ -124,6 +128,7 @@ themes/koi-pond/            Omarchy theme (colors.toml + wallpaper)
 cheat_sheets/               printable keyboard cheat sheets (PDF)
 desktop-stats/              wallpaper stats panel (GTK4 layer-shell)
 plugins/sepro.vlc-recent/   Omarchy shell bar widget
+plugins/sepro.visualizer/   wallpaper audio visualizer (shell service plugin)
 vlc/                        qt5ct palette template, qt5ct.conf, vlc.desktop
 chrome/                     Chrome theme manifest template, chrome-flags.conf
 plymouth/                   boot splash theme

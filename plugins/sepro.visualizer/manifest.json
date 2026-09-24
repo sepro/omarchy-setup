@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "sepro.visualizer",
+  "name": "Audio visualizer",
+  "version": "1.0.0",
+  "author": "sepro",
+  "license": "MIT",
+  "description": "cava spectrum drawn on the left of the wallpaper as white square blocks with peak-hold lines, shown only while music plays.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

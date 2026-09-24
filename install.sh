@@ -7,7 +7,8 @@
 #   ./install.sh --list          list components
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
-#             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills
+#             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills,
+#             visualizer
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -18,7 +19,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -274,6 +275,23 @@ do_radar() {
 o.bind("SUPER + SHIFT + R", "Rain radar", "omarchy-shell sepro.radar toggle")'
 }
 
+do_visualizer() {
+  step "Audio visualizer: cava bars on the left of the wallpaper while music plays"
+  need_pkgs cava
+  local dest="$CFG/omarchy/plugins/sepro.visualizer"
+  mkdir -p "$dest"
+  for f in "$REPO"/plugins/sepro.visualizer/*; do install_file "$f" "$dest/$(basename "$f")"; done
+  # A service plugin, not a bar widget: it is enabled through plugins[] in shell.json.
+  if jq -e '(.plugins // []) | any(.id == "sepro.visualizer")' "$CFG/omarchy/shell.json" >/dev/null 2>&1; then
+    say "shell.json: plugin already enabled"
+  else
+    # The shell only knows the plugin once it has rescanned the plugins folder.
+    [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && omarchy-shell shell rescanPlugins >/dev/null 2>&1
+    omarchy plugin enable sepro.visualizer \
+      || warn "could not enable plugin; run: omarchy plugin enable sepro.visualizer"
+  fi
+}
+
 do_shortcuts() {
   step "Shortcuts: tmux, herdr, password manager and private browser"
   # Omarchy only binds these while its preinstalled apps are kept; removing them
@@ -335,7 +353,7 @@ for c in "${COMPONENTS[@]}"; do
     plymouth) do_plymouth ;; jellyfin) do_jellyfin ;;
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
-    torrents) do_torrents ;;
+    torrents) do_torrents ;; visualizer) do_visualizer ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done
