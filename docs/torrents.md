@@ -48,6 +48,15 @@ The Web UI is the full qBittorrent interface: priorities, files, trackers, setti
 | Save path | `/data/downloads` |
 | Network interface | `surfshark_wg`. Torrents **only** use the Surfshark VPN, so if it drops they stall instead of leaking; the popup warns "No connection". |
 | Seeding | none: a torrent stops as soon as it completes (ratio limit 0 → Stop) |
+| Extra trackers | 15 live public trackers are added to every new torrent (`add_trackers`) |
+
+**Why the extra trackers:** Surfshark doesn't forward ports, so other peers can't
+connect to us and we only reach peers that accept incoming connections. On
+small swarms that can mean 2–3 peers out of 20+ seeders. More live trackers
+help find the connectable ones, and many older torrents only list dead
+trackers (rarbg, coppersurfer, ...). The only real fix is a VPN with port
+forwarding (ProtonVPN, AirVPN, PIA). If trackers on the list die, edit
+`add_trackers` in `PREFERENCES`.
 
 To change them, edit `PREFERENCES` at the top of
 `~/.config/omarchy/plugins/sepro.torrents/qbt.py` and rerun it with `setup`, or

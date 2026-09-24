@@ -64,6 +64,27 @@ PREFERENCES = {
     "max_ratio_enabled": True,
     "max_ratio": 0,
     "max_ratio_act": 0,
+    # Surfshark can't forward a port, so we only reach peers that accept
+    # incoming connections; extra live trackers find more of them, and many
+    # old torrents only list dead ones (rarbg, coppersurfer, ...).
+    "add_trackers_enabled": True,
+    "add_trackers": "\n".join([
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.demonii.com:1337/announce",
+        "udp://open.tracker.cl:1337/announce",
+        "udp://open.stealth.si:80/announce",
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://exodus.desync.com:6969/announce",
+        "udp://tracker.theoks.net:6969/announce",
+        "udp://tracker.dump.cl:6969/announce",
+        "udp://tracker-udp.gbitt.info:80/announce",
+        "udp://opentracker.io:6969/announce",
+        "udp://explodie.org:6969/announce",
+        "udp://tracker.qu.ax:6969/announce",
+        "udp://tracker.tryhackx.org:6969/announce",
+        "https://tracker.tamersunion.org:443/announce",
+        "http://tracker.renfei.net:8080/announce",
+    ]),
 }
 
 # Torrent states grouped for the widget (qBittorrent 5 names).
