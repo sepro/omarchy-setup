@@ -58,6 +58,13 @@ lock, and leaving it running locks the screen at `idle.lock`. It also follows th
 **Screensaver** toggle (SUPER + CTRL + O): when that is off, only the menu entry
 starts it (`pond-screensaver force`).
 
+Before opening its windows, `pond-screensaver` closes any open bar panel (rain
+radar, downloads, clock, network…). An open panel holds the keyboard from a
+full-screen overlay layer, so the new window would get no focus, Hyprland would
+skip the fullscreen rule, and the screensaver would open as a small floating
+window under the panel. Every shell panel answers a `close()` IPC call, so the
+script closes each target listed by `qs ipc show` that has one.
+
 `pond.lua` ends the screensaver on mouse movement, or when focus moves to a
 window that isn't another screensaver. It waits 1.5 s first, so the window
 opening doesn't count. When one monitor's screensaver closes, it closes the

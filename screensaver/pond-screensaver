@@ -29,6 +29,23 @@ focus_monitor() {
   hyprctl dispatch "hl.dsp.focus({ monitor = \"$1\" })" >/dev/null 2>&1 || hyprctl dispatch focusmonitor "$1" >/dev/null
 }
 
+# An open bar panel (radar, downloads, clock…) holds the keyboard from a
+# full-screen overlay layer, so the new window gets no focus, Hyprland skips the
+# fullscreen rule and the panel stays on top. Close every panel first (they all
+# answer a close() IPC call) and wait for the overlay to go.
+close_panels() {
+  local t
+  for t in $(qs ipc -n -p "${OMARCHY_PATH:-/usr/share/omarchy}/shell" show 2>/dev/null |
+    awk '/^target /{t=$2} /function close\(\): void/{print t}'); do
+    omarchy-shell -q "$t" close
+  done
+  for _ in {1..20}; do
+    hyprctl layers -j | jq -e '[.. | objects | select(.namespace? == "omarchy-keyboard-panel")] | length == 0' >/dev/null && break
+    sleep 0.1
+  done
+}
+close_panels
+
 focused=$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')
 n=0
 
