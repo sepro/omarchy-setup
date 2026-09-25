@@ -15,7 +15,8 @@ import qs.Ui
 //
 // In the popup: Enter / Space stops or resumes the row, O opens its folder,
 // X removes it (files are kept), S / R stop / resume all, W opens the Web UI,
-// C cleans the downloads with Claude, J syncs to Jellyfin. SUPER+D toggles it.
+// C cleans the downloads with Claude, J syncs to Jellyfin, L shows what clean
+// or sync is doing in a floating terminal. SUPER+D toggles it.
 Panel {
   id: root
   moduleName: "sepro.torrents"
@@ -59,6 +60,8 @@ Panel {
   function openWebUi() { run(["webui"]); root.close() }
   function cleanDownloads() { if (!jobBlocker) run(["clean"]) }
   function syncJellyfin() { if (!jobBlocker) run(["sync"]) }
+  // The terminal needs the keyboard, which the popup holds while open.
+  function showLog() { if (status.log) { run(["log"]); root.close() } }
   function stopAll() { run(["stop", "all"]) }
   function startAll() { run(["start", "all"]) }
 
@@ -118,7 +121,7 @@ Panel {
     cursorActive = false
     cursor = 0
     refresh()
-    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+    Qt.callLater(function() { letterKeys.forceActiveFocus() })
   }
 
   Timer {
@@ -171,7 +174,7 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: keyCatcher
+    focusTarget: letterKeys
     contentWidth: panel.fittedContentWidth(Style.space(440))
     contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(560))
 
@@ -182,16 +185,33 @@ Panel {
       onActivateRequested: root.toggleTorrent(root.cursorTorrent())
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
+      onDeleteRequested: root.removeTorrent(root.cursorTorrent())
       onTextKey: function(t) {
         var k = t.toLowerCase()
         if (k === " ") root.toggleTorrent(root.cursorTorrent())
         else if (k === "o") root.openFolder(root.cursorTorrent())
-        else if (k === "x") root.removeTorrent(root.cursorTorrent())
         else if (k === "s") root.stopAll()
         else if (k === "r") root.startAll()
         else if (k === "w") root.openWebUi()
         else if (k === "c") root.cleanDownloads()
         else if (k === "j") root.syncJellyfin()
+        else if (k === "l") root.showLog()
+      }
+
+      // PanelKeyCatcher turns j / k / h / l into vim-style cursor moves and
+      // x into deleteRequested, so those never reach onTextKey. This item has
+      // the focus, so it sees keys before the catcher: it takes J (sync) and
+      // L (log) and passes everything else on. Arrows still move the cursor.
+      Item {
+        id: letterKeys
+        focus: true
+        Keys.onPressed: function(event) {
+          var k = event.text.toLowerCase()
+          if (k === "j") root.syncJellyfin()
+          else if (k === "l") root.showLog()
+          else { event.accepted = false; return }
+          event.accepted = true
+        }
       }
 
       Flickable {
@@ -253,6 +273,17 @@ Panel {
               foreground: root.foreground
               fontFamily: root.fontFamily
               onClicked: root.syncJellyfin()
+            }
+            PanelActionButton {
+              iconText: "󰆍"
+              tooltipText: !root.status.log ? "Show log: clean and sync haven't run yet"
+                : (root.status.clean || root.sync ? "Watch what " : "Show what ")
+                  + (root.status.log === "clean" ? "clean downloads" : "the Jellyfin sync")
+                  + (root.status.clean || root.sync ? " is doing (L)" : " did last (L)")
+              enabled: !!root.status.log
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: root.showLog()
             }
             PanelActionButton {
               iconText: "󰖟"
@@ -366,7 +397,7 @@ Panel {
             width: parent.width
             wrapMode: Text.WordWrap
             text: (root.torrents.length > 0 ? "Enter stop/resume  ·  O folder  ·  X remove  ·  S/R all  ·  " : "")
-              + "W Web UI  ·  C clean  ·  J sync"
+              + "W Web UI  ·  C clean  ·  J sync  ·  L log"
             color: root.dim
             opacity: 0.7
             font.family: root.fontFamily

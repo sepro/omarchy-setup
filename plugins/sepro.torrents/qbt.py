@@ -14,6 +14,7 @@ login for localhost (WebUI\\LocalHostAuth=false), so no password is needed.
     qbt.py webui               open the web interface in the browser
     qbt.py clean               sort finished downloads with Claude, in the background
     qbt.py sync                copy movies/series to Jellyfin, in the background
+    qbt.py log [clean|sync]    watch the running (or last) job in a floating terminal
     qbt.py setup               apply the preferences below to the daemon
 """
 
@@ -38,6 +39,8 @@ CLEAN_LOCK = os.path.join(CACHE, "clean.lock")
 SYNC_LOG = os.path.join(CACHE, "sync.log")
 SYNC_STATE = os.path.join(CACHE, "sync.json")
 SYNC_SCRIPT = os.path.expanduser("~/.local/bin/sync-jellyfin.sh")
+# Hyprland floats and centres this app id (see docs/torrents.md).
+LOG_APP_ID = "sepro.torrents-log"
 MOVIES = "/data/movies"
 SERIES = "/data/series"
 MUSIC = "/data/music"
@@ -309,8 +312,19 @@ def _sync_state():
     return state if _alive(state.get("pid")) else None
 
 
+def _log_job():
+    """The job `log` shows: the one running, else the one that ran last."""
+    if _clean_running():
+        return "clean"
+    if _sync_state():
+        return "sync"
+    logs = [(os.path.getmtime(path), job) for job, path in (("clean", CLEAN_LOG), ("sync", SYNC_LOG))
+            if os.path.exists(path)]
+    return max(logs)[1] if logs else ""
+
+
 def _jobs():
-    return {"clean": _clean_running(), "sync": _sync_state()}
+    return {"clean": _clean_running(), "sync": _sync_state(), "log": _log_job()}
 
 
 def _unfinished():
@@ -358,20 +372,72 @@ def cmd_clean_run():
         f.write(str(os.getpid()))
     notify("Clean downloads", "Claude is sorting /data/downloads…")
     try:
+        # stream-json reports every step as it happens, so the log can be
+        # followed live (`qbt.py log`); plain -p output only arrives at the end.
+        summary, failed = "", True
         with open(CLEAN_LOG, "w") as log:
-            result = subprocess.run(
+            proc = subprocess.Popen(
                 ["claude", "-p", CLEAN_PROMPT, "--model", "sonnet",
-                 "--effort", "medium", "--permission-mode", "auto"],
+                 "--effort", "medium", "--permission-mode", "auto",
+                 "--output-format", "stream-json", "--verbose"],
                 cwd=DOWNLOADS, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=log, text=True)
-            log.write(result.stdout)
-        summary = result.stdout.strip() or "(no output)"
+                stderr=subprocess.STDOUT, text=True)
+            for line in proc.stdout:
+                text, result = _clean_event(line)
+                if result:
+                    summary, failed = result
+                log.write(text)
+                log.flush()
+            failed = proc.wait() != 0 or failed
+        summary = summary.strip() or "(no output)"
         if len(summary) > 1500:
             summary = summary[:1500] + "…"
-        notify("Downloads cleaned" if result.returncode == 0 else "Clean downloads failed",
-               summary + "\n\nFull log: " + CLEAN_LOG, urgent=result.returncode != 0)
+        notify("Clean downloads failed" if failed else "Downloads cleaned",
+               summary + "\n\nFull log: " + CLEAN_LOG, urgent=failed)
     finally:
         os.remove(CLEAN_LOCK)
+
+
+DIM, BOLD, RED, RESET = "\033[2m", "\033[1m", "\033[31m", "\033[0m"
+
+
+def _clean_event(line):
+    """Turn one line of Claude's stream-json into readable log text.
+
+    Returns (text, result); result is (summary, failed) for the final event.
+    Lines that aren't JSON (errors on stderr) pass through unchanged.
+    """
+    try:
+        event = json.loads(line)
+    except ValueError:
+        return line, None
+    kind = event.get("type")
+    if kind == "system" and event.get("subtype") == "init":
+        return f"{DIM}Claude started ({event.get('model', '?')}) in {event.get('cwd', '')}{RESET}\n", None
+    if kind == "result":
+        summary = event.get("result") or ""
+        failed = bool(event.get("is_error"))
+        return f"\n{BOLD}── Summary ──{RESET}\n{summary}\n", (summary, failed)
+    out = []
+    for item in (event.get("message") or {}).get("content") or []:
+        if not isinstance(item, dict):
+            continue
+        if kind == "assistant" and item.get("type") == "text" and item.get("text", "").strip():
+            out.append("\n" + item["text"].strip() + "\n")
+        elif kind == "assistant" and item.get("type") == "tool_use":
+            args = item.get("input") or {}
+            arg = next((args[k] for k in ("command", "file_path", "pattern", "path", "url") if k in args),
+                       json.dumps(args))
+            out.append(f"\n{BOLD}▸ {item.get('name')}{RESET} {str(arg)[:400]}\n")
+        elif kind == "user" and item.get("type") == "tool_result":
+            content = item.get("content")
+            if isinstance(content, list):
+                content = "\n".join(c.get("text", "") for c in content if isinstance(c, dict))
+            lines = str(content or "").rstrip().splitlines()
+            shown = lines[:12] + ([f"… {len(lines) - 12} more lines"] if len(lines) > 12 else [])
+            color = RED if item.get("is_error") else DIM
+            out.extend(f"{color}  │ {l[:300]}{RESET}\n" for l in shown)
+    return "".join(out), None
 
 
 def _sync_line(base, line):
@@ -409,10 +475,14 @@ def cmd_sync_run():
              "speed": "", "files": 0, "total_files": 0}
     _write_json(SYNC_STATE, state)
     try:
+        log = open(SYNC_LOG, "w")
+        log.write("Checking what's new (dry run)…\n")
+        log.flush()
         # A dry run first to learn what will be copied, so progress can be
         # given over the whole sync rather than one file at a time.
         dry = subprocess.run([SYNC_SCRIPT, "-n", "-v"], capture_output=True, text=True)
         if dry.returncode != 0:
+            log.write(dry.stdout + dry.stderr)
             notify("Jellyfin sync failed", (dry.stderr.strip() or dry.stdout.strip())[-1500:], urgent=True)
             return
         sizes, base = {}, None
@@ -422,12 +492,14 @@ def cmd_sync_run():
                 sizes[path] = os.path.getsize(path)
         total = sum(sizes.values()) or 1
         if not sizes:
+            log.write("Nothing new to copy.\n")
             notify("Jellyfin is up to date", "Nothing new to copy")
             return
+        log.write(f"{len(sizes)} file(s) to copy.\n\n")
         state.update(phase="copying", total_files=len(sizes))
         _write_json(SYNC_STATE, state)
 
-        with open(SYNC_LOG, "w") as log:
+        with log:
             proc = subprocess.Popen([SYNC_SCRIPT, "-v"], stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, text=True, bufsize=1)
             done_bytes, current, lines, last, base, buf = 0, None, [], 0, None, ""
@@ -439,8 +511,10 @@ def cmd_sync_run():
                     buf += chunk
                     continue
                 line, buf = buf, ""
+                # rsync redraws its progress line with \r; keep those in the
+                # log so a terminal following it shows the progress in place.
+                log.write(line + chunk)
                 if chunk == "\n":
-                    log.write(line + "\n")
                     lines.append(line)
                 m = PROGRESS.match(line)
                 if m and current:
@@ -457,6 +531,7 @@ def cmd_sync_run():
                 now = time.monotonic()
                 if now - last > 0.5:
                     _write_json(SYNC_STATE, state)
+                    log.flush()
                     last = now
             proc.wait()
 
@@ -468,10 +543,63 @@ def cmd_sync_run():
         notify("Jellyfin sync finished" if proc.returncode == 0 else "Jellyfin sync failed",
                body + "\n\nFull log: " + SYNC_LOG, urgent=proc.returncode != 0 or bool(warnings))
     finally:
+        log.close()
         try:
             os.remove(SYNC_STATE)
         except OSError:
             pass
+
+
+def cmd_log(job):
+    job = job or _log_job()
+    if job not in ("clean", "sync"):
+        notify("Torrents", "Clean and sync haven't run yet: there is no log to show")
+        return
+    title = "Clean downloads" if job == "clean" else "Sync to Jellyfin"
+    subprocess.Popen(["uwsm-app", "--", "xdg-terminal-exec", f"--app-id={LOG_APP_ID}", f"--title={title}",
+                      "-e", sys.executable, os.path.abspath(__file__), "follow", job],
+                     start_new_session=True, stdin=subprocess.DEVNULL,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def cmd_follow(job):
+    """Runs inside the log terminal: print the job's log and follow it until the job ends."""
+    path, running = (CLEAN_LOG, _clean_running) if job == "clean" else (SYNC_LOG, _sync_state)
+    title = "Clean downloads (Claude)" if job == "clean" else "Sync to Jellyfin (sync-jellyfin.sh)"
+    print(f"{BOLD}{title}{RESET}  {DIM}{path}{RESET}\n", flush=True)
+    for _ in range(20):  # a job started a moment ago may not have its log yet
+        if os.path.exists(path) or not running():
+            break
+        time.sleep(0.25)
+    was_running = bool(running())
+    pos = 0
+    try:
+        while True:
+            alive = running()  # checked before reading, so the last lines aren't missed
+            try:
+                size = os.path.getsize(path)
+            except OSError:
+                size = 0
+            if size < pos:  # a new run truncated the log
+                print(f"\n{DIM}── new run ──{RESET}\n", flush=True)
+                pos = 0
+            if size > pos:
+                with open(path, "rb") as f:
+                    f.seek(pos)
+                    data = f.read()
+                pos += len(data)
+                sys.stdout.buffer.write(data)
+                sys.stdout.flush()
+            elif not alive:
+                break
+            time.sleep(0.3)
+    except KeyboardInterrupt:
+        return
+    end = "finished" if was_running else "not running; this is the last run's log"
+    try:
+        input(f"\n\n{DIM}── {end} · press Enter to close ──{RESET}")
+    except (EOFError, KeyboardInterrupt):
+        pass
 
 
 def cmd_setup():
@@ -507,6 +635,10 @@ def main():
         cmd_sync()
     elif cmd == "sync-run":
         cmd_sync_run()
+    elif cmd == "log":
+        cmd_log(arg)
+    elif cmd == "follow":
+        cmd_follow(arg)
     elif cmd == "setup":
         cmd_setup()
     else:

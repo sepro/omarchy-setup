@@ -10,12 +10,14 @@ opens a popup that shows progress and lets you stop, resume and remove torrents.
 ./install.sh torrents
 ```
 
-This does five things:
+This does six things:
 - installs `qbittorrent-nox`
 - enables `~/.config/systemd/user/qbittorrent-nox.service`, which starts at login
 - seeds `~/.config/qBittorrent/qBittorrent.conf` on the first install only
 - registers `qbt-magnet.desktop` for `magnet:` links and `.torrent` files
 - adds the `sepro.torrents` widget to the bar
+- adds Hyprland rules to `~/.config/hypr/hyprland.lua` that float and centre the
+  log terminal (app id `sepro.torrents-log`, 1100×700)
 
 ## Usage
 
@@ -34,8 +36,32 @@ This does five things:
 | Header 󰖟, W | Open the Web UI |
 | Header 󰃢, C | Clean downloads: runs Claude (Sonnet, medium effort, auto mode) in the background on the rules in `/data/downloads/CLAUDE.md`; the summary arrives as a notification, the full log is in `~/.cache/sepro-torrents/clean.log` |
 | Header 󰑓, J | Sync to Jellyfin: runs `sync-jellyfin.sh` in the background with a progress bar in the popup; log in `~/.cache/sepro-torrents/sync.log` |
+| Header 󰆍, L | Show the log: a terminal floating in the middle of the screen follows what clean or sync is doing right now (or shows the last run) |
 
 Clean and sync are disabled while any torrent is unfinished, and while either of them is already running.
+
+## Watching clean and sync
+
+![Log terminal following a clean run](img/torrents-log.jpg)
+
+Clean and sync run in the background, so the popup only shows that they are
+busy. 󰆍 (or L) opens a terminal that follows the log live: each command
+Claude runs and the start of its output, or `sync-jellyfin.sh`'s file list with
+rsync's progress line updating in place. When the job ends the terminal says so
+and closes on Enter; closing it earlier doesn't stop the job. With nothing
+running, it shows the log of the last run.
+
+For this, clean runs Claude with `--output-format stream-json`: plain `claude -p`
+only prints the summary when it's done. `qbt.py` turns the events into readable
+lines as they arrive. The terminal is `qbt.py follow <job>` in
+`xdg-terminal-exec`, with app id `sepro.torrents-log`, so Hyprland floats and
+centres it.
+
+**Popup keys J, L and X:** Omarchy's `PanelKeyCatcher` treats `j`/`k`/`h`/`l`
+as vim-style cursor keys and `x` as delete, so these keys never reached the
+widget's own key handler: J only worked with Shift, and X did nothing. A small
+focused item in `Panel.qml` now handles J and L before the catcher, and X is
+wired to the catcher's delete signal. The arrow keys still move the cursor.
 
 The Web UI is the full qBittorrent interface: priorities, files, trackers, settings.
 
@@ -71,7 +97,7 @@ running as any user on this machine can control qBittorrent.
 | File | Role |
 |---|---|
 | `plugins/sepro.torrents/Panel.qml` | Bar button and popup; polls every 4 s (1.5 s while open) |
-| `plugins/sepro.torrents/qbt.py` | Web API client: `status`, `add`, `stop`, `start`, `remove`, `folder`, `webui`, `clean`, `sync`, `setup` |
+| `plugins/sepro.torrents/qbt.py` | Web API client: `status`, `add`, `stop`, `start`, `remove`, `folder`, `webui`, `clean`, `sync`, `log`, `setup` |
 | `torrents/qbittorrent-nox.service` | User service (`--confirm-legal-notice`) |
 | `torrents/qBittorrent.conf` | First-run config: Web UI on 127.0.0.1:8080, no localhost login |
 | `torrents/qbt-magnet.desktop` | Magnet / `.torrent` handler → `qbt.py add` |

@@ -256,6 +256,11 @@ do_torrents() {
   append_once "$CFG/hypr/bindings.lua" "sepro.torrents" \
 '-- Torrents popup: ~/.config/omarchy/plugins/sepro.torrents
 o.bind("SUPER + D", "Torrents", "omarchy-shell sepro.torrents toggle")'
+  append_once "$CFG/hypr/hyprland.lua" "sepro.torrents-log" \
+'-- Torrents popup L / 󰆍: clean or sync log in a centred terminal floating over everything
+o.window("sepro.torrents-log", { float = true })
+o.window("sepro.torrents-log", { center = true })
+o.window("sepro.torrents-log", { size = { 1100, 700 } })'
 }
 
 do_radar() {
