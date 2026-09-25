@@ -307,25 +307,39 @@ do_screensaver() {
   install_file "$REPO/screensaver/pond-screensaver" "$HOME/.local/bin/pond-screensaver"
   chmod +x "$HOME/.local/bin/pond-screensaver"
 
-  # SUPER+ESC -> Screensaver: reuse the menu id to swap its action. Inserted
-  # right after the opening brace; the menu parser drops the trailing comma.
-  # The override replaces the whole entry, so it repeats Omarchy's icon and label.
+  # SUPER+ESC -> System: Lock first (and so pre-selected), Screensaver second,
+  # which starts the pond screensaver. The menu orders rows by where their id
+  # first appears in Omarchy's defaults and an override keeps that slot, so the
+  # two slots swap contents: "system.screensaver" holds Lock and "system.lock"
+  # holds Screensaver. Overrides replace whole entries, so they repeat Omarchy's
+  # icons and labels. New lines go right after the opening brace; the menu
+  # parser drops trailing commas.
   local menu="$CFG/omarchy/extensions/omarchy-menu.jsonc"
-  local entry='"system.screensaver": {"icon":"󱄄","label":"Screensaver","action":"pond-screensaver force"},'
+  local entries=(
+    '"system.screensaver": {"icon":"","label":"Lock","action":"omarchy-system-lock"},'
+    '"system.lock": {"icon":"󱄄","label":"Screensaver","action":"pond-screensaver force"},'
+  )
   mkdir -p "$(dirname "$menu")"
   [[ -s $menu ]] || printf '{\n}\n' > "$menu"
-  if grep -qF "  $entry" "$menu"; then
-    say "menu: Screensaver entry already overridden"
-  else
-    cp -p "$menu" "$menu.bak-$STAMP"
-    if grep -q "sepro.screensaver" "$menu"; then
-      # Older version of this entry: replace the line.
-      ENTRY="$entry" perl -i -pe 's/^\s*"system\.screensaver":.*$/  $ENV{ENTRY}/' "$menu"
-    else
-      ENTRY="$entry" perl -i -pe 'if (!$done && /^\{/) { $_ .= "  \/\/ sepro.screensaver: SUPER+ESC -> Screensaver starts the pond screensaver\n  $ENV{ENTRY}\n"; $done = 1 }' "$menu"
+  local entry id backed=
+  for entry in "${entries[@]}"; do
+    if grep -qF "  $entry" "$menu"; then
+      say "menu: ${entry%%:*} already overridden"
+      continue
     fi
-    say "menu: Screensaver entry now starts pond-screensaver"
-  fi
+    [[ -n $backed ]] || { cp -p "$menu" "$menu.bak-$STAMP"; backed=1; }
+    id=${entry%%\":*}; id=${id#\"}
+    if grep -q "^\s*\"$id\":" "$menu"; then
+      # Older version of this entry: replace the line.
+      ENTRY="$entry" ID="$id" perl -i -pe 's/^\s*"\Q$ENV{ID}\E":.*$/  $ENV{ENTRY}/' "$menu"
+    else
+      ENTRY="$entry" perl -i -pe 'if (!$done && /^\{/) { $_ .= "  $ENV{ENTRY}\n"; $done = 1 }' "$menu"
+    fi
+    say "menu: ${entry%%:*} set"
+  done
+  # One comment above the pair (the older version had a Screensaver-only one).
+  perl -i -ne 'print unless /^\s*\/\/ sepro\.screensaver:/' "$menu"
+  perl -i -pe 'if (!$done && /^\{/) { $_ .= "  // sepro.screensaver: SUPER+ESC -> System lists Lock first, then the pond Screensaver (slots swapped)\n"; $done = 1 }' "$menu"
 
   # Idle: Omarchy's idle service runs `bash -lc "... omarchy-launch-screensaver"`
   # with a hard-coded name, and /usr/share/omarchy/bin comes first on PATH, so a

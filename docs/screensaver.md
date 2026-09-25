@@ -24,8 +24,13 @@ This:
 - installs `mpv` if it is missing
 - copies the shader, input bindings and exit script to `~/.config/pond-screensaver/`
 - copies the launcher to `~/.local/bin/pond-screensaver`
-- overrides the `system.screensaver` entry in
-  `~/.config/omarchy/extensions/omarchy-menu.jsonc` so the menu starts it
+- overrides the `system.screensaver` and `system.lock` entries in
+  `~/.config/omarchy/extensions/omarchy-menu.jsonc` so SUPER+ESC lists **Lock**
+  first (pre-selected, so SUPER+ESC, Enter locks) and **Screensaver** second,
+  which starts the pond screensaver. The menu orders rows by where their id first
+  appears in Omarchy's defaults, and an override keeps that slot, so the two
+  entries can't be moved; instead the slots swap contents (the `screensaver` id
+  holds Lock and the `lock` id holds Screensaver)
 - adds a `omarchy-launch-screensaver` shell function to `~/.bash_profile` so
   Omarchy's idle service starts it (see below)
 
