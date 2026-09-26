@@ -136,7 +136,7 @@ Item {
               width: Math.max(0, (root.levels[index] || 0) * root.step - root.gap)
               height: root.square
               clip: true
-              opacity: 0.9
+              opacity: 0.5
 
               Row {
                 spacing: root.gap
