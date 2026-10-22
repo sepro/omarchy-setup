@@ -23,6 +23,7 @@ install can be set up with one command.
 | 🎵 | **Audio visualizer**: cava spectrum as white square blocks with peak lines on the left of the wallpaper, only while music plays | [visualizer.md](docs/visualizer.md) |
 | 💧 | **Pond screensaver**: the wallpaper as a pond with a slow swell and a drop of water every ~10 s, instead of the text screensaver (idle and SUPER+ESC, where Lock now comes first) | [screensaver.md](docs/screensaver.md) |
 | ⌨️ | **Shortcuts**: SUPER+CTRL+Return herdr, SUPER+ALT+Return tmux, SUPER+SHIFT+/ KeePassXC, SUPER+SHIFT+ALT+Return private browser, restored after removing the preinstalls | [shortcuts.md](docs/shortcuts.md) |
+| 🔧 | **Tweaks**: small one-off settings, e.g. Chrome keeps its address bar when full-screened with SUPER+F | [tweaks.md](docs/tweaks.md) |
 | 🐑 | **herdr keys**: herdr's default keybindings with Ctrl+Space as the prefix, instead of Omarchy's tmux-style remap, so the cheat sheets match | [herdr.md](docs/herdr.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies, series and music to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
 | 🧠 | **Claude Code skills**: `/track-changes` records every change Claude makes into this repo, with install step, docs and screenshot | [claude-skills.md](docs/claude-skills.md) |
@@ -38,7 +39,7 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`, `screensaver`.
+Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`, `screensaver`, `tweaks`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't

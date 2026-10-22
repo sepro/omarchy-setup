@@ -8,7 +8,7 @@
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
 #             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills,
-#             visualizer, screensaver
+#             visualizer, screensaver, tweaks
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -19,7 +19,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver tweaks)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -350,6 +350,16 @@ do_screensaver() {
 omarchy-launch-screensaver() { pond-screensaver "$@"; }'
 }
 
+do_tweaks() {
+  step "Tweaks: small one-off settings (see docs/tweaks.md)"
+  # SUPER+F tells the window it is fullscreen, and Chrome then hides its tabs and
+  # address bar. Without fullscreen sync Hyprland only fills the screen and Chrome
+  # keeps its toolbar; F11 inside Chrome still gives a real fullscreen.
+  append_once "$CFG/hypr/hyprland.lua" "sepro.browser-fullscreen" \
+'-- sepro.browser-fullscreen: SUPER+F fills the screen but Chromium browsers keep their address bar
+o.window({ tag = "chromium-based-browser" }, { sync_fullscreen = false })'
+}
+
 do_shortcuts() {
   step "Shortcuts: tmux, herdr, password manager and private browser"
   # Omarchy only binds these while its preinstalled apps are kept; removing them
@@ -412,6 +422,7 @@ for c in "${COMPONENTS[@]}"; do
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
     torrents) do_torrents ;; visualizer) do_visualizer ;; screensaver) do_screensaver ;;
+    tweaks) do_tweaks ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
 done
