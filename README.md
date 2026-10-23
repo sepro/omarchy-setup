@@ -27,7 +27,7 @@ install can be set up with one command.
 | 🔧 | **Tweaks**: small one-off settings, e.g. Chrome keeps its address bar when full-screened with SUPER+F | [tweaks.md](docs/tweaks.md) |
 | 🐑 | **herdr keys**: herdr's default keybindings with Ctrl+Space as the prefix, instead of Omarchy's tmux-style remap, so the cheat sheets match | [herdr.md](docs/herdr.md) |
 | 📺 | **sync-jellyfin.sh**: copies new movies, series and music to a Jellyfin share, sorted into season folders | [sync-jellyfin.md](docs/sync-jellyfin.md) |
-| 🧠 | **Claude Code skills**: `/track-changes` records every change Claude makes into this repo, with install step, docs and screenshot | [claude-skills.md](docs/claude-skills.md) |
+| 🧠 | **Claude Code skills**: `/track-changes` records every change Claude makes into this repo, with install step, docs and screenshot; `/openclaw` checks and fixes the OpenClaw box over SSH | [claude-skills.md](docs/claude-skills.md) |
 
 ## Install
 

@@ -46,3 +46,27 @@ install.
 
 The instructions are in
 [`claude/skills/track-changes/SKILL.md`](../claude/skills/track-changes/SKILL.md).
+
+## openclaw
+
+Type `/openclaw <assignment>` in Claude Code to have Claude log into the
+OpenClaw box on the LAN over SSH and check or fix things there, for example
+`/openclaw why did the morning cron not send anything?`. With no assignment
+it runs a health check: gateway, Telegram channel, cron runs, today's log,
+disk and memory.
+
+It needs SSH key access, set up once by hand in a real terminal (for the
+password prompt). Fill in the box's IP and your user there; they're kept
+out of this repo:
+
+```sh
+ssh-keygen -t ed25519 -N '' -C claude-openclaw -f ~/.ssh/openclaw
+printf '\nHost openclaw\n    HostName <openclaw-ip>\n    User <user>\n    IdentityFile ~/.ssh/openclaw\n    IdentitiesOnly yes\n' >> ~/.ssh/config
+ssh-copy-id -i ~/.ssh/openclaw.pub openclaw
+```
+
+Claude only reads without asking. It asks before restarts, config edits,
+updates or anything that touches state, backs up config before editing it,
+and never prints secrets. The machine's layout (paths, gateway, logs) and
+these rules are in
+[`claude/skills/openclaw/SKILL.md`](../claude/skills/openclaw/SKILL.md).
