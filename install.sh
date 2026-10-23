@@ -301,7 +301,11 @@ do_lockfix() {
   step "Lock screen: reclaim password field focus after suspend/resume"
   local dest="$CFG/omarchy/plugins/sepro.lock"
   mkdir -p "$dest"
-  for f in "$REPO"/plugins/sepro.lock/*; do install_file "$f" "$dest/$(basename "$f")"; done
+  local f changed=0
+  for f in "$REPO"/plugins/sepro.lock/*; do
+    cmp -s "$f" "$dest/$(basename "$f")" || changed=1
+    install_file "$f" "$dest/$(basename "$f")"
+  done
   # A cloned service plugin: it replaces omarchy.lock via plugins[]/disabledPlugins
   # in shell.json, which `omarchy plugin clone` sets up on first install.
   if jq -e '(.plugins // []) | any(.id == "sepro.lock")' "$CFG/omarchy/shell.json" >/dev/null 2>&1; then
@@ -312,6 +316,11 @@ do_lockfix() {
       || warn "could not enable plugin; run: omarchy plugin enable sepro.lock"
   fi
   omarchy plugin disable omarchy.lock >/dev/null 2>&1 || true
+  # The shell's hot reload leaves a keepLoaded service running its old code, so
+  # an updated lock plugin only takes effect after a shell restart.
+  if (( changed )) && [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    omarchy-restart-shell >/dev/null 2>&1 || warn "restart the shell: omarchy restart shell"
+  fi
 }
 
 do_screensaver() {
