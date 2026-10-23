@@ -8,7 +8,7 @@
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
 #             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills,
-#             visualizer, screensaver, tweaks
+#             visualizer, screensaver, lockfix, tweaks
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -19,7 +19,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver tweaks)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver lockfix tweaks)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -297,6 +297,23 @@ do_visualizer() {
   fi
 }
 
+do_lockfix() {
+  step "Lock screen: reclaim password field focus after suspend/resume"
+  local dest="$CFG/omarchy/plugins/sepro.lock"
+  mkdir -p "$dest"
+  for f in "$REPO"/plugins/sepro.lock/*; do install_file "$f" "$dest/$(basename "$f")"; done
+  # A cloned service plugin: it replaces omarchy.lock via plugins[]/disabledPlugins
+  # in shell.json, which `omarchy plugin clone` sets up on first install.
+  if jq -e '(.plugins // []) | any(.id == "sepro.lock")' "$CFG/omarchy/shell.json" >/dev/null 2>&1; then
+    say "shell.json: plugin already enabled"
+  else
+    [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && omarchy-shell shell rescanPlugins >/dev/null 2>&1
+    omarchy plugin enable sepro.lock \
+      || warn "could not enable plugin; run: omarchy plugin enable sepro.lock"
+  fi
+  omarchy plugin disable omarchy.lock >/dev/null 2>&1 || true
+}
+
 do_screensaver() {
   step "Pond screensaver: the wallpaper with water ripples replaces the text screensaver"
   need_pkgs mpv
@@ -422,6 +439,7 @@ for c in "${COMPONENTS[@]}"; do
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
     torrents) do_torrents ;; visualizer) do_visualizer ;; screensaver) do_screensaver ;;
+    lockfix) do_lockfix ;;
     tweaks) do_tweaks ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
