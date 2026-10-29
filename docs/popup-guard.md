@@ -10,6 +10,8 @@ for, refuses every new tab or window that leads to **another** site. Links and
 pop-ups within the same site keep working. It does nothing on sites you haven't
 switched on, so it can't break the rest of the web.
 
+![Popup Guard button with the "on" badge](img/popup-guard.png)
+
 ## Install
 
 ```sh
