@@ -22,6 +22,7 @@ install can be set up with one command.
 | 🌧️ | **Rain radar**: bar widget next to the weather with a looping rain radar map around Herent (RainViewer) and a two-hour rain forecast (Buienradar) | [radar.md](docs/radar.md) |
 | 🎵 | **Audio visualizer**: cava spectrum as white square blocks with peak lines on the left of the wallpaper, only while music plays | [visualizer.md](docs/visualizer.md) |
 | 💧 | **Pond screensaver**: the wallpaper as a pond with a slow swell and a drop of water every ~10 s, instead of the text screensaver (idle and SUPER+ESC, where Lock now comes first) | [screensaver.md](docs/screensaver.md) |
+| 🛡️ | **Popup Guard**: Chrome extension that blocks pop-up ad tabs to other sites, on the sites you switch it on for | [popup-guard.md](docs/popup-guard.md) |
 | 🔒 | **Lock screen focus fix**: password field regains keyboard focus after suspend/resume instead of needing a click first | [lockfix.md](docs/lockfix.md) |
 | ⌨️ | **Shortcuts**: SUPER+CTRL+Return herdr, SUPER+ALT+Return tmux, SUPER+SHIFT+/ KeePassXC, SUPER+SHIFT+ALT+Return private browser, restored after removing the preinstalls | [shortcuts.md](docs/shortcuts.md) |
 | 🔧 | **Tweaks**: small one-off settings, e.g. Chrome keeps its address bar when full-screened with SUPER+F | [tweaks.md](docs/tweaks.md) |
@@ -40,14 +41,14 @@ cd ~/Git/omarchy-config
 ./install.sh vlc-recent vlc   # or only some components (see --list)
 ```
 
-Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`, `screensaver`, `lockfix`, `tweaks`.
+Components: `theme`, `vlc`, `chrome`, `files`, `vlc-recent`, `desktop-stats`, `plymouth`, `jellyfin`, `herdr-scratchpad`, `surfshark`, `torrents`, `radar`, `shortcuts`, `herdr`, `claude-skills`, `visualizer`, `screensaver`, `lockfix`, `popup-guard`, `tweaks`.
 
 You can run the installer more than once. Before it changes a file it saves a
 `.bak-<timestamp>` copy, and it adds each Hyprland line only once. It doesn't
 touch `/usr/share/omarchy`, so `omarchy update` keeps your changes. Only
 `plymouth` and the package installs (e.g. `cava` for `visualizer`) need sudo.
 
-There are two manual steps:
+Manual steps:
 - **Chrome:** load `~/.local/state/omarchy/current/theme` as an unpacked extension
   (see [Chrome](docs/themes.md#chrome)). The installer first turns off Omarchy's
   Chrome colour policy, which would otherwise block the theme with "blocked by the
@@ -61,6 +62,10 @@ There are two manual steps:
   so the native host Omarchy already installed keeps working, and the extension is
   read from `/usr/share/omarchy`, so it follows Omarchy updates. The same applies
   to the `yt-dlp` and `whatsapp-slim` extensions on that flag line.
+- **Popup Guard (Chrome):** `chrome://extensions` -> Developer mode -> Load
+  unpacked -> `~/.local/share/popup-guard`, turn on Details -> Allow in Incognito,
+  then click its toolbar button on a site that opens pop-up tabs (see
+  [Popup Guard](docs/popup-guard.md)).
 - **Desktop stats:** check the `DISKS` list at the top of
   `~/.config/hypr/scripts/desktop-stats.py` matches your mounts.
 
@@ -134,6 +139,7 @@ plugins/sepro.vlc-recent/   Omarchy shell bar widget
 plugins/sepro.visualizer/   wallpaper audio visualizer (shell service plugin)
 vlc/                        qt5ct palette template, qt5ct.conf, vlc.desktop
 chrome/                     Chrome theme manifest template, chrome-flags.conf
+popup-guard/                Chrome extension that blocks pop-up tabs on chosen sites
 plymouth/                   boot splash theme
 herdr/config.toml           herdr config: default keys, Ctrl+Space prefix
 herdr-scratchpad/           login launcher for herdr + Claude on the scratchpad

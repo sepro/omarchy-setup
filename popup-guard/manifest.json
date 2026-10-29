@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Popup Guard",
+  "version": "1.0",
+  "description": "Blocks pop-up tabs and windows to other sites, on the sites you switch it on for.",
+  "permissions": ["storage", "scripting", "webNavigation"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Popup Guard", "default_icon": "icon.png" },
+  "icons": { "128": "icon.png" }
+}

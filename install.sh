@@ -8,7 +8,7 @@
 #
 # Components: theme, vlc, chrome, files, vlc-recent, desktop-stats, plymouth, jellyfin,
 #             herdr-scratchpad, surfshark, torrents, radar, shortcuts, herdr, claude-skills,
-#             visualizer, screensaver, lockfix, tweaks
+#             visualizer, screensaver, lockfix, popup-guard, tweaks
 #
 # Idempotent: anything it would overwrite is backed up to <file>.bak-<stamp>,
 # and lines appended to Hyprland config are only added once. Nothing under
@@ -19,7 +19,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
 CFG="$HOME/.config"
-ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver lockfix tweaks)
+ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver lockfix popup-guard tweaks)
 
 say()  { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -376,6 +376,26 @@ do_screensaver() {
 omarchy-launch-screensaver() { pond-screensaver "$@"; }'
 }
 
+do_popup_guard() {
+  step "Popup Guard: Chrome extension that blocks pop-up tabs on chosen sites"
+  local dest="$HOME/.local/share/popup-guard" f changed=0
+  mkdir -p "$dest"
+  for f in "$REPO"/popup-guard/*; do
+    cmp -s "$f" "$dest/$(basename "$f")" || changed=1
+    install_file "$f" "$dest/$(basename "$f")"
+  done
+  if (( changed )); then
+    say "One manual step: chrome://extensions -> Developer mode -> Load unpacked -> $dest"
+    say "  (already loaded? press its reload button instead)"
+    say "  for incognito: Details -> Allow in Incognito"
+    say "  then pin its toolbar button and click it on each site that opens pop-up tabs"
+    command -v wl-copy >/dev/null && printf '%s' "$dest" | wl-copy && say "  path copied to the clipboard"
+    say "(Chrome stable ignores --load-extension, so it can't be automated.)"
+  else
+    say "extension files unchanged"
+  fi
+}
+
 do_tweaks() {
   step "Tweaks: small one-off settings (see docs/tweaks.md)"
   # SUPER+F tells the window it is fullscreen, and Chrome then hides its tabs and
@@ -448,7 +468,7 @@ for c in "${COMPONENTS[@]}"; do
     herdr-scratchpad) do_herdr_scratchpad ;; surfshark) do_surfshark ;; radar) do_radar ;;
     shortcuts) do_shortcuts ;; herdr) do_herdr ;; claude-skills) do_claude_skills ;;
     torrents) do_torrents ;; visualizer) do_visualizer ;; screensaver) do_screensaver ;;
-    lockfix) do_lockfix ;;
+    lockfix) do_lockfix ;; popup-guard) do_popup_guard ;;
     tweaks) do_tweaks ;;
     *) warn "unknown component: $c (see --list)"; exit 2 ;;
   esac
