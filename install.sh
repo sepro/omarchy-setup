@@ -18,6 +18,9 @@ set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s)"
+# Weather widget location (machine-specific; used by the tweaks component)
+WEATHER_NAME="Herent"
+WEATHER_COORDS="50.9086,4.6714"
 CFG="$HOME/.config"
 ALL=(theme vlc chrome files vlc-recent desktop-stats plymouth jellyfin herdr-scratchpad surfshark torrents radar shortcuts herdr claude-skills visualizer screensaver lockfix popup-guard tweaks)
 
@@ -419,6 +422,23 @@ do_tweaks() {
   append_once "$CFG/hypr/hyprland.lua" "sepro.browser-fullscreen" \
 '-- sepro.browser-fullscreen: SUPER+F fills the screen but Chromium browsers keep their address bar
 o.window({ tag = "chromium-based-browser" }, { sync_fullscreen = false })'
+
+  # Weather widget: metric units, and a location with coordinates. The locale is
+  # en_US, so the widget would pick °F/mph. A name-only location makes it depend
+  # on wttr.in for current conditions; with coordinates it uses Open-Meteo directly.
+  local sj="$CFG/omarchy/shell.json"
+  if jq -e '.bar.layout[][] | select(.id == "omarchy.weather") | .unit == "metric"' "$sj" >/dev/null 2>&1; then
+    say "shell.json: weather already metric"
+  elif jq -e '.bar.layout[][] | select(.id == "omarchy.weather")' "$sj" >/dev/null 2>&1; then
+    cp "$sj" "$sj.bak-$STAMP"
+    jq '(.bar.layout[][] | select(.id == "omarchy.weather")) .unit = "metric"' "$sj" > "$sj.new" && mv "$sj.new" "$sj"
+    say "shell.json: weather set to metric"
+  else
+    warn "omarchy.weather not in the bar; add it, then rerun ./install.sh tweaks"
+  fi
+  omarchy-weather-location --set "$WEATHER_NAME" "$WEATHER_COORDS" >/dev/null \
+    && say "weather location: $WEATHER_NAME ($WEATHER_COORDS)" \
+    || warn "could not set weather location; run: omarchy-weather-location --set $WEATHER_NAME $WEATHER_COORDS"
 }
 
 do_shortcuts() {

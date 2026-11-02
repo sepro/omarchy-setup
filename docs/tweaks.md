@@ -32,3 +32,15 @@ without the toolbar.
 
 Check it with `hyprctl activewindow -j`: in full screen `fullscreen` is `2` and
 `fullscreenClient` stays `0`.
+
+## Weather widget: metric units and a fixed location
+
+The system locale is `en_US`, so Omarchy's weather widget (`omarchy.weather`)
+showed °F and mph. This sets `"unit": "metric"` on its entry in
+`~/.config/omarchy/shell.json`, so it shows °C and km/h.
+
+It also stores the location with coordinates via `omarchy-weather-location`
+(`WEATHER_NAME` / `WEATHER_COORDS` at the top of `install.sh`, default Herent).
+With only a name, the widget needs wttr.in for current conditions. When wttr.in
+is down (it was, with a TLS error), the widget has nothing to show and hides
+itself from the bar. With coordinates it fetches from Open-Meteo directly.
