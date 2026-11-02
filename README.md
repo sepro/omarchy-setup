@@ -16,7 +16,7 @@ install can be set up with one command.
 | 📁 | **Files theme**: Files (Nautilus) and other GTK apps use the active Omarchy theme's colours | [themes.md](docs/themes.md#files) |
 | 🌐 | **Chrome theme**: Chrome theme extension generated from the active Omarchy theme | [themes.md](docs/themes.md#chrome) |
 | 🐟 | **Plymouth splash**: Koi Pond boot and disk-unlock screen | [plymouth.md](docs/plymouth.md) |
-| 🤖 | **herdr scratchpad**: herdr runs on the SUPER+S scratchpad from login, with Claude already started inside | [herdr-scratchpad.md](docs/herdr-scratchpad.md) |
+| 🤖 | **herdr scratchpad**: herdr runs on the SUPER+S scratchpad from login, with Claude already started inside, as a teal-bordered floating drop-down over a dimmed desktop | [herdr-scratchpad.md](docs/herdr-scratchpad.md) |
 | 🦈 | **Surfshark tweaks**: tray icon always visible, sticky auto-connect toast dismissed at login | [surfshark.md](docs/surfshark.md) |
 | 🧲 | **Torrents**: headless qBittorrent; magnet links download to /data/downloads over the VPN; bar widget shows progress with stop/resume/remove, and a floating terminal shows what clean (Claude) and the Jellyfin sync are doing | [torrents.md](docs/torrents.md) |
 | 🌧️ | **Rain radar**: bar widget next to the weather with a looping rain radar map around Herent (RainViewer) and a two-hour rain forecast (Buienradar) | [radar.md](docs/radar.md) |

@@ -176,6 +176,7 @@ do_jellyfin() {
 
 do_herdr_scratchpad() {
   step "herdr + Claude on the scratchpad (SUPER+S)"
+  local SCRATCHPAD_BORDER=7ec3cc   # brighter version of the Koi Pond teal accent
   command -v herdr >/dev/null || warn "herdr not found; install it from https://herdr.dev"
   command -v claude >/dev/null || warn "claude not found on PATH"
   need_pkgs jq
@@ -185,6 +186,20 @@ do_herdr_scratchpad() {
 '-- herdr with Claude inside, parked on the scratchpad (SUPER+S shows it)
 o.window("org.omarchy.herdr-scratchpad", { workspace = "special:scratchpad silent" })
 o.exec_on_start(os.getenv("HOME") .. "/.config/hypr/scripts/herdr-scratchpad.sh")'
+  append_once "$CFG/hypr/hyprland.lua" "sepro.scratchpad-look" \
+'-- sepro.scratchpad-look: make the herdr scratchpad stand out from normal windows:
+-- floating drop-down, bright teal border (Koi Pond bright_cyan), rest dimmed
+o.window("org.omarchy.herdr-scratchpad", {
+  float = true,
+  center = true,
+  size = { "(monitor_w*0.85)", "(monitor_h*0.85)" },
+  border_size = 3,
+  border_color = "rgb(@COLOR@)",
+  dim_around = true,
+})'
+  # Keep the border colour in that block in sync with SCRATCHPAD_BORDER (also
+  # fills in @COLOR@ on a first install).
+  sed -i '/sepro.scratchpad-look/,/^})/s/border_color = "rgb([^)]*)"/border_color = "rgb('"$SCRATCHPAD_BORDER"')"/' "$CFG/hypr/hyprland.lua"
   if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
     hyprctl reload >/dev/null
     setsid "$CFG/hypr/scripts/herdr-scratchpad.sh" >/dev/null 2>&1 &
